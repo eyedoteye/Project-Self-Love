@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <windows.h>
 #include <stdint.h>
 #include "SDL.h"
@@ -9,125 +10,52 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 270
 
-bool init();
-bool loadMedia();
-void close();
-
-SDL_Window* gWindow = NULL;
-SDL_Surface* gScreenSurface = NULL;
-SDL_Surface* gHelloWorld = NULL;
-
-global_variable int JOYSTICK_DEAD_ZONE = 8000;
-global_variable SDL_Joystick* gGameController;
-
-bool 
-init()
-{
-	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
-	{
-		OutputDebugStringA("init Error: ");
-		OutputDebugStringA(SDL_GetError());
-		return false;
-	}
-
-	gWindow = SDL_CreateWindow("Mak Gam",
-							   SDL_WINDOWPOS_UNDEFINED,
-							   SDL_WINDOWPOS_UNDEFINED,
-							   SCREEN_WIDTH, SCREEN_HEIGHT,
-							   SDL_WINDOW_SHOWN);
-	
-	if(gWindow == NULL)
-	{
-		printf("init Error: ");
-		OutputDebugStringA(SDL_GetError());
-		return false;
-	}
-
-	gScreenSurface = SDL_GetWindowSurface(gWindow);
-
-	if(SDL_NumJoysticks() < 1)
-	{
-		OutputDebugStringA("no controller!");
-	}
-	else
-	{
-		gGameController = SDL_JoystickOpen(0);
-		if(gGameController == NULL)
-		{
-			OutputDebugStringA("Controler error:");
-			OutputDebugStringA(SDL_GetError());
-		}
-	}
-
-	return true;
-}
-
-bool loadMedia()
-{
-	gHelloWorld = SDL_LoadBMP("image1.bmp");
-	if(gHelloWorld == NULL)
-	{
-		OutputDebugStringA("loadMedia Error: ");
-		OutputDebugStringA(SDL_GetError());
-		return false;
-	}
-	return true;
-}
-
-void close()
-{
-	SDL_FreeSurface(gHelloWorld);
-	gHelloWorld = NULL;
-
-	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-
-	SDL_JoystickClose(gGameController);
-
-	SDL_Quit();
-}
+global_variable bool Running = true;
 
 int
 main(int argc, char* args[])
 {
-	init();
-	loadMedia();
-
-	bool quit = false;
+	SDL_Window *window;
+	SDL_Renderer *renderer;
+	
+	if(SDL_Init(SDL_INIT_VIDEO) < 0)
+	{
+		return 1;
+	}
+	window = SDL_CreateWindow("SDL Test",
+							  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+							  SCREEN_WIDTH, SCREEN_HEIGHT,
+							  0);
+	
+	renderer = SDL_CreateRenderer(window, -1, 0);
+	
 	SDL_Event e;
-
-	SDL_Rect dstrect;
-	dstrect.x = 0;
-	dstrect.y = 0;
-	dstrect.w = gHelloWorld->w;
-	dstrect.h = gHelloWorld->h;
-
-	int16_t xDir = 0;
 	uint32_t dt, lastTime = SDL_GetTicks();
-	while(!quit) {
+	
+	while(Running) {
 		dt = SDL_GetTicks() - lastTime;
 		lastTime = SDL_GetTicks();
+		
 		while(SDL_PollEvent(&e) != 0)
 		{
 			if(e.type == SDL_QUIT)
 			{
-				quit = true;
+				Running = false;
 			}
 		}
 
-		
+		char debugString[100];
+		snprintf(debugString, 100, "debug\n");
+		OutputDebugStringA(debugString);
 
-		dstrect.x += (int)(120 * dt / 1000.f) * SDL_JoystickGetAxis(gGameController, 0)/10000;
-		dstrect.y += (int)(120 * dt / 1000.f) * SDL_JoystickGetAxis(gGameController, 1) / 10000;
-		
-		SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, &dstrect);
-		SDL_UpdateWindowSurface(gWindow);
+		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+		SDL_RenderClear(renderer);
+		SDL_RenderPresent(renderer);
 
-		SDL_Delay(10);
-
+		SDL_Delay(1);
 	}
 
-	close();
+	SDL_Quit();
 
 	return(0);
 }
