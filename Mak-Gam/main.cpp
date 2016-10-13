@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <windows.h>
 #include <stdint.h>
+#include <math.h>
 #include "SDL.h"
 
 #define internal static
@@ -16,11 +17,15 @@ global_variable bool Running = true;
 global_variable SDL_Point Clicks[255];
 global_variable uint8_t ClicksSize;
 
+SDL_Window *window;
+SDL_Renderer *renderer;
+
 internal void
 RecordMouseClick(int x, int y)
 {
 	Clicks[ClicksSize].x = x;
-	Clicks[ClicksSize++].y = y;
+	Clicks[ClicksSize].y = y;
+	ClicksSize++;
 }
 
 internal void
@@ -29,14 +34,36 @@ ClearMouseClicks()
 	ClicksSize = 0;
 }
 
-//draw line
+internal double
+GetAngleBetweenPoints(SDL_Point One, SDL_Point Two)
+{
+	int xOff = Two.x - One.x;
+	int yOff = Two.y - One.y;
+
+	return atan2(yOff, xOff) * 180.f / 3.14;
+}
+
+internal void
+DrawTriangle(int X, int Y, double Angle, int HalfHeight)
+{
+	SDL_Point Points[4];
+	Points[0].x = X + cos(Angle * 3.14 / 180.f) * HalfHeight;
+	Points[0].y = Y + sin(Angle * 3.14 / 180.f) * HalfHeight;
+	Points[3].x = Points[0].x;
+	Points[3].y = Points[0].y;
+
+	Points[1].x = X + cos((Angle + 120) * 3.14 / 180.f) * HalfHeight;
+	Points[1].y = Y + sin((Angle + 120) * 3.14 / 180.f) * HalfHeight;
+
+	Points[2].x = X + cos((Angle - 120) * 3.14 / 180.f) * HalfHeight;
+	Points[2].y = Y + sin((Angle - 120) * 3.14 / 180.f) * HalfHeight;
+
+	SDL_RenderDrawLines(renderer, Points, 4);
+}
 
 int
 main(int argc, char* args[])
 {
-	SDL_Window *window;
-	SDL_Renderer *renderer;
-	
 	if(SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
 		return 1;
@@ -101,6 +128,12 @@ main(int argc, char* args[])
 		//				 45.f, NULL, SDL_FLIP_NONE);
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 		SDL_RenderDrawLines(renderer, Clicks, ClicksSize);
+		SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+		local_persist int Angle = 0;
+		Angle += .6 * dt;
+		DrawTriangle(Clicks[0].x, Clicks[0].y,
+					 GetAngleBetweenPoints(Clicks[0],Clicks[1]),
+					 15);
 		SDL_RenderPresent(renderer);
 
 		SDL_Delay(1);
