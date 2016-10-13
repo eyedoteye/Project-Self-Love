@@ -76,7 +76,9 @@ RecordMouseClick(int x, int y)
 internal void
 ClearMouseClicks()
 {
-	ClicksSize = 0;
+	ClicksSize = 1;
+	Clicks[0].x = Hero.Position.x;
+	Clicks[0].y = Hero.Position.y;
 	Hero.InPath = false;
 }
 
@@ -107,8 +109,6 @@ NavigatePath(double Dt)
 		Hero.DirectionFacing = Direction;
 	}
 }
-
-
 
 internal void
 DrawTriangle(int X, int Y, double Angle, int HalfHeight)
