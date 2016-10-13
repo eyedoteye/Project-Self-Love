@@ -32,12 +32,12 @@ GetDistanceBetweenPoints(double X1, double Y1, double X2, double Y2)
 }
 
 internal double
-GetAngleBetweenPoints(SDL_Point One, SDL_Point Two)
+GetAngleBetweenPoints(double X1, double Y1, double X2, double Y2)
 {
-	int xOff = Two.x - One.x;
-	int yOff = Two.y - One.y;
+	double X = X2 - X1;
+	double Y = Y2 - Y1;
 
-	return atan2(yOff, xOff) * 180 / 3.14;
+	return atan2(Y, X) * 180 / 3.14;
 }
 
 struct Coords
@@ -45,69 +45,155 @@ struct Coords
 	double x, y;
 };
 
+struct CoordsQueue
+{
+	Coords Positions[255];
+	uint8_t Size;
+	uint8_t StartIndex;
+};
+
+internal bool
+CoordsQueuePush(CoordsQueue *CQueue, Coords *C)
+{ 
+	// Note(sidecode): Should overflow wrap.
+	if((uint8_t)(CQueue->Size + 1) == CQueue->StartIndex)
+	{
+		return false;
+	}
+
+	CQueue->Positions[CQueue->StartIndex + CQueue->Size].x = C->x;
+	CQueue->Positions[CQueue->StartIndex + CQueue->Size].y = C->y;
+	CQueue->Size++;
+
+	return true;
+}
+
+internal Coords
+CoordsQueuePop(CoordsQueue *CQueue)
+{
+	Coords Position = CQueue->Positions[CQueue->StartIndex];
+	CQueue->Size--;
+	CQueue->StartIndex++;
+
+	return Position;
+}
+
+internal Coords
+CoordsQueuePeek(CoordsQueue *CQueue)
+{
+	return CQueue->Positions[CQueue->StartIndex];
+}
+
+internal Coords
+CoordsQueuePeek2(CoordsQueue *CQueue)
+{
+	return CQueue->Positions[(uint8_t)(CQueue->StartIndex+1)];
+}
+
+internal void
+CoordsQueueClear(CoordsQueue *CQueue)
+{
+	CQueue->Size = 0;
+	CQueue->StartIndex = 0;
+}
+
+internal void
+RenderCoordsQueue(CoordsQueue *CQueue)
+{
+	uint8_t StopIndex = CQueue->StartIndex + CQueue->Size - 1;
+	for(uint8_t Index = CQueue->StartIndex; Index != StopIndex; Index++)
+	{
+		Coords Position1 = CQueue->Positions[Index];
+		Coords Position2 = CQueue->Positions[(uint8_t)(Index + 1)];
+		SDL_RenderDrawLine(renderer,
+						   Position1.x, Position1.y,
+						   Position2.x, Position2.y);
+	}
+}
+
+//Todo: Add mouseclicks to waypoints;
+
 struct Hero_
 {
 	Coords Position;
+	CoordsQueue Waypoints;
 	int CurrentPathIndex;
 	double DirectionFacing;
-	bool InPath;
 };
 
 global_variable Hero_ Hero;
 
-internal void
-RecordMouseClick(int x, int y)
-{
-	Clicks[ClicksSize].x = x;
-	Clicks[ClicksSize].y = y;
-	ClicksSize++;
-	if(Hero.InPath == false)
-	{
-		Hero.Position.x = Clicks[0].x;
-		Hero.Position.y = Clicks[0].y;
-		Hero.CurrentPathIndex = 0;
-	}
-	if(ClicksSize >= 2)
-	{
-		Hero.InPath = true;
-	}
-}
-
-internal void
-ClearMouseClicks()
-{
-	ClicksSize = 1;
-	Clicks[0].x = Hero.Position.x;
-	Clicks[0].y = Hero.Position.y;
-	Hero.InPath = false;
-}
+//internal void
+//RecordMouseClick(int x, int y)
+//{
+//	Clicks[ClicksSize].x = x;
+//	Clicks[ClicksSize].y = y;
+//	ClicksSize++;
+//	if(Hero.InPath == false)
+//	{
+//		Hero.Position.x = Clicks[0].x;
+//		Hero.Position.y = Clicks[0].y;
+//		Hero.CurrentPathIndex = 0;
+//	}
+//	if(ClicksSize >= 2)
+//	{
+//		Hero.InPath = true;
+//	}
+//}
+//Todo: Refactor to work with coords queue
 
 internal void
 NavigatePath(double Dt)
 {
-	if(Hero.InPath && Hero.CurrentPathIndex+1 != ClicksSize)
+	if(Hero.Waypoints.Size > 1)
 	{
 		double Direction;
+		Coords Position = CoordsQueuePeek2(&Hero.Waypoints);
 
-		Direction = GetAngleBetweenPoints(Clicks[Hero.CurrentPathIndex],
-										Clicks[Hero.CurrentPathIndex+1]);
-
-		if(GetDistanceBetweenPoints(Hero.Position.x, Hero.Position.y,
-									Clicks[Hero.CurrentPathIndex + 1].x,
-									Clicks[Hero.CurrentPathIndex + 1].y)
-									< 50 * Dt)
+		Direction = GetAngleBetweenPoints(
+			Hero.Position.x, Hero.Position.y,
+			Position.x, Position.y);
+		
+		if(GetDistanceBetweenPoints(
+			Hero.Position.x, Hero.Position.y,
+			Position.x, Position.y) < 50 * Dt)
 		{
-			Hero.CurrentPathIndex++;
-			Hero.Position.x = Clicks[Hero.CurrentPathIndex].x;
-			Hero.Position.y = Clicks[Hero.CurrentPathIndex].y;
+			CoordsQueuePop(&Hero.Waypoints);
+			Hero.Position.x = Position.x;
+			Hero.Position.y = Position.y;
 		}
 		else
 		{
 			Hero.Position.x += cos(Direction * 3.14 / 180.f) * Dt * 50;
 			Hero.Position.y += sin(Direction * 3.14 / 180.f) * Dt * 50;
 		}
+
 		Hero.DirectionFacing = Direction;
 	}
+
+	//if(Hero.CurrentPathIndex+1 != ClicksSize)
+	//{
+	//	double Direction;
+
+	//	Direction = GetAngleBetweenPoints(Clicks[Hero.CurrentPathIndex],
+	//									Clicks[Hero.CurrentPathIndex+1]);
+
+	//	if(GetDistanceBetweenPoints(Hero.Position.x, Hero.Position.y,
+	//								Clicks[Hero.CurrentPathIndex + 1].x,
+	//								Clicks[Hero.CurrentPathIndex + 1].y)
+	//								< 50 * Dt)
+	//	{
+	//		Hero.CurrentPathIndex++;
+	//		Hero.Position.x = Clicks[Hero.CurrentPathIndex].x;
+	//		Hero.Position.y = Clicks[Hero.CurrentPathIndex].y;
+	//	}
+	//	else
+	//	{
+	//		Hero.Position.x += cos(Direction * 3.14 / 180.f) * Dt * 50;
+	//		Hero.Position.y += sin(Direction * 3.14 / 180.f) * Dt * 50;
+	//	}
+	//	Hero.DirectionFacing = Direction;
+	//}
 }
 
 internal void
@@ -135,15 +221,13 @@ main(int argc, char* args[])
 	{
 		return 1;
 	}
+
 	window = SDL_CreateWindow("SDL Test",
 							  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 							  SCREEN_WIDTH, SCREEN_HEIGHT,
 							  0);
 	
 	renderer = SDL_CreateRenderer(window, -1, 0);
-	/*
-	SDL_Surface* image = SDL_LoadBMP("image1.bmp");
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, image);*/
 
 	SDL_Event e;
 	uint32_t dt, lastTime = SDL_GetTicks();
@@ -155,7 +239,8 @@ main(int argc, char* args[])
 	Hero.Position.y = 0;
 	Hero.DirectionFacing = 0;
 	Hero.CurrentPathIndex = 0;
-	Hero.InPath = false;
+	CoordsQueueClear(&Hero.Waypoints);
+	CoordsQueuePush(&Hero.Waypoints, &Hero.Position);
 
 	while(Running) {
 		dt = SDL_GetTicks() - lastTime;
@@ -174,19 +259,20 @@ main(int argc, char* args[])
 					SDL_MouseButtonEvent Event = e.button;
 					if(Event.button == SDL_BUTTON_LEFT)
 					{
-						RecordMouseClick(Event.x, Event.y);
+						Coords Position;
+						Position.x = Event.x;
+						Position.y = Event.y;
+						CoordsQueuePush(&Hero.Waypoints, &Position);
+
 					}
 					else if(Event.button == SDL_BUTTON_RIGHT)
 					{
-						ClearMouseClicks();
+						CoordsQueueClear(&Hero.Waypoints);
+						CoordsQueuePush(&Hero.Waypoints, &Hero.Position);
 					}
 				} break;
 			}
 		}
-
-		/*char debugString[100];
-		snprintf(debugString, 100, "debug\n");
-		OutputDebugStringA(debugString);*/
 
 		NavigatePath(dt/1000.f);
 
@@ -194,18 +280,11 @@ main(int argc, char* args[])
 		SDL_RenderClear(renderer);
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 		SDL_RenderFillRect(renderer, &fillRect);
-		//SDL_Rect dimensions;
-		//dimensions.x = 100;
-		//dimensions.y = 50;
-		//SDL_QueryTexture(texture, NULL, NULL, &dimensions.w, &dimensions.h);
-		//dimensions.h *= 2;
-		//SDL_RenderCopyEx(renderer, texture, NULL, &dimensions,
-		//				 45.f, NULL, SDL_FLIP_NONE);
+
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		SDL_RenderDrawLines(renderer, Clicks, ClicksSize);
+		RenderCoordsQueue(&Hero.Waypoints);
 		SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-		local_persist int Angle = 0;
-		Angle += .6 * dt;
+
 		DrawTriangle(Hero.Position.x, Hero.Position.y,
 					 Hero.DirectionFacing,
 					 15);
@@ -213,8 +292,6 @@ main(int argc, char* args[])
 
 		SDL_Delay(1);
 	}
-
-	//SDL_FreeSurface(image);
 
 	SDL_Quit();
 
