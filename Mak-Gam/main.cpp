@@ -160,6 +160,13 @@ NavigatePath(double Dt)
 }
 
 internal void
+BaddieMovement(double Dt)
+{
+	Baddie.Position.x += cos(Baddie.Position.y/10) * Dt*10;
+	Baddie.Position.y += sin(Baddie.Position.x/10) * Dt*10;
+}
+
+internal void
 CollideWithBaddie()
 {
 	double Distance = GetDistanceBetweenPoints(
@@ -249,7 +256,7 @@ main(int argc, char* args[])
 
 	Baddie.Position.x = SCREEN_WIDTH / 2;
 	Baddie.Position.y = SCREEN_HEIGHT / 2;
-	Baddie.Radius = 7;
+	Baddie.Radius = 14;
 
 	while(Running) {
 		dt = SDL_GetTicks() - lastTime;
@@ -284,6 +291,7 @@ main(int argc, char* args[])
 		}
 
 		NavigatePath(dt/1000.f);
+		BaddieMovement(dt / 1000.f);
 		CollideWithBaddie();
 
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
