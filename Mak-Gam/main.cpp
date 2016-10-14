@@ -55,8 +55,7 @@ struct CoordsQueue
 internal bool
 CoordsQueuePush(CoordsQueue *CQueue, Coords *C)
 { 
-	// Note(sidecode): Should overflow wrap.
-	if((uint8_t)(CQueue->Size + 1) == CQueue->StartIndex)
+	if((uint8_t)(CQueue->Size + CQueue->StartIndex + 1) == CQueue->StartIndex)
 	{
 		return false;
 	}
@@ -120,7 +119,6 @@ struct Hero_
 };
 
 global_variable Hero_ Hero;
-
 internal void
 NavigatePath(double Dt)
 {
