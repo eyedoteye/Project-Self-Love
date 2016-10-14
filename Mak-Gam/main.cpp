@@ -116,9 +116,19 @@ struct Hero_
 	CoordsQueue Waypoints;
 	int CurrentPathIndex;
 	double DirectionFacing;
+	double Radius;
 };
 
 global_variable Hero_ Hero;
+
+struct Baddie_
+{
+	Coords Position;
+	double Radius;
+};
+
+global_variable Baddie_ Baddie;
+
 internal void
 NavigatePath(double Dt)
 {
@@ -146,6 +156,25 @@ NavigatePath(double Dt)
 		}
 
 		Hero.DirectionFacing = Direction;
+	}
+}
+
+internal void
+CollideWithBaddie()
+{
+	double Distance = GetDistanceBetweenPoints(
+		Hero.Position.x, Hero.Position.y,
+		Baddie.Position.x, Baddie.Position.y
+	);
+
+	if(Distance < Hero.Radius + Baddie.Radius)
+	{
+		double PushDistance = Baddie.Radius - (Distance - Hero.Radius);
+		double Direction = GetAngleBetweenPoints(
+			Hero.Position.x, Hero.Position.y,
+			Baddie.Position.x, Baddie.Position.y);
+		Baddie.Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
+		Baddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
 	}
 }
 
@@ -214,8 +243,13 @@ main(int argc, char* args[])
 	Hero.Position.y = 0;
 	Hero.DirectionFacing = 0;
 	Hero.CurrentPathIndex = 0;
+	Hero.Radius = 7;
 	CoordsQueueClear(&Hero.Waypoints);
 	CoordsQueuePush(&Hero.Waypoints, &Hero.Position);
+
+	Baddie.Position.x = SCREEN_WIDTH / 2;
+	Baddie.Position.y = SCREEN_HEIGHT / 2;
+	Baddie.Radius = 7;
 
 	while(Running) {
 		dt = SDL_GetTicks() - lastTime;
@@ -250,6 +284,7 @@ main(int argc, char* args[])
 		}
 
 		NavigatePath(dt/1000.f);
+		CollideWithBaddie();
 
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 		SDL_RenderClear(renderer);
@@ -262,8 +297,9 @@ main(int argc, char* args[])
 
 		DrawTriangle(Hero.Position.x, Hero.Position.y,
 					 Hero.DirectionFacing,
-					 15);
-		DrawCircle(Hero.Position.x, Hero.Position.y, 7, 32);
+					 acos(30 * 3.14 / 180) * Hero.Radius * 2);
+		DrawCircle(Hero.Position.x, Hero.Position.y, Hero.Radius, 32);
+		DrawCircle(Baddie.Position.x, Baddie.Position.y, Baddie.Radius, 32);
 		SDL_RenderPresent(renderer);
 
 		SDL_Delay(1);
