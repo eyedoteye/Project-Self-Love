@@ -167,6 +167,24 @@ DrawTriangle(int X, int Y, double Angle, int HalfHeight)
 	SDL_RenderDrawLines(renderer, Points, 4);
 }
 
+internal void
+DrawCircle(double X, double Y, double Radius, double Segments)
+{
+	CoordsQueue Points;
+	Points.Size = 0;
+	Points.StartIndex = 0;
+
+	for(int Index = 0; Index < Segments; Index++)
+	{
+		Coords Point;
+		Point.x = X + cos(Index / Segments * 3.14 * 2) * Radius;
+		Point.y = Y + sin(Index / Segments * 3.14 * 2) * Radius;
+		CoordsQueuePush(&Points, &Point);
+	}
+
+	RenderCoordsQueue(&Points);
+}
+
 int
 main(int argc, char* args[])
 {
@@ -241,6 +259,7 @@ main(int argc, char* args[])
 		DrawTriangle(Hero.Position.x, Hero.Position.y,
 					 Hero.DirectionFacing,
 					 15);
+		DrawCircle(Hero.Position.x, Hero.Position.y, 7, 32);
 		SDL_RenderPresent(renderer);
 
 		SDL_Delay(1);
