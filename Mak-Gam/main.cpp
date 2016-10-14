@@ -111,8 +111,6 @@ RenderCoordsQueue(CoordsQueue *CQueue)
 	}
 }
 
-//Todo: Add mouseclicks to waypoints;
-
 struct Hero_
 {
 	Coords Position;
@@ -122,25 +120,6 @@ struct Hero_
 };
 
 global_variable Hero_ Hero;
-
-//internal void
-//RecordMouseClick(int x, int y)
-//{
-//	Clicks[ClicksSize].x = x;
-//	Clicks[ClicksSize].y = y;
-//	ClicksSize++;
-//	if(Hero.InPath == false)
-//	{
-//		Hero.Position.x = Clicks[0].x;
-//		Hero.Position.y = Clicks[0].y;
-//		Hero.CurrentPathIndex = 0;
-//	}
-//	if(ClicksSize >= 2)
-//	{
-//		Hero.InPath = true;
-//	}
-//}
-//Todo: Refactor to work with coords queue
 
 internal void
 NavigatePath(double Dt)
@@ -170,30 +149,6 @@ NavigatePath(double Dt)
 
 		Hero.DirectionFacing = Direction;
 	}
-
-	//if(Hero.CurrentPathIndex+1 != ClicksSize)
-	//{
-	//	double Direction;
-
-	//	Direction = GetAngleBetweenPoints(Clicks[Hero.CurrentPathIndex],
-	//									Clicks[Hero.CurrentPathIndex+1]);
-
-	//	if(GetDistanceBetweenPoints(Hero.Position.x, Hero.Position.y,
-	//								Clicks[Hero.CurrentPathIndex + 1].x,
-	//								Clicks[Hero.CurrentPathIndex + 1].y)
-	//								< 50 * Dt)
-	//	{
-	//		Hero.CurrentPathIndex++;
-	//		Hero.Position.x = Clicks[Hero.CurrentPathIndex].x;
-	//		Hero.Position.y = Clicks[Hero.CurrentPathIndex].y;
-	//	}
-	//	else
-	//	{
-	//		Hero.Position.x += cos(Direction * 3.14 / 180.f) * Dt * 50;
-	//		Hero.Position.y += sin(Direction * 3.14 / 180.f) * Dt * 50;
-	//	}
-	//	Hero.DirectionFacing = Direction;
-	//}
 }
 
 internal void
