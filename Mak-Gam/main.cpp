@@ -181,6 +181,10 @@ DrawCircle(double X, double Y, double Radius, double Segments)
 		Point.y = Y + sin(Index / Segments * 3.14 * 2) * Radius;
 		CoordsQueuePush(&Points, &Point);
 	}
+	Coords Point;
+	Point.x = X + cos(0) * Radius;
+	Point.y = Y + sin(0) * Radius;
+	CoordsQueuePush(&Points, &Point);
 
 	RenderCoordsQueue(&Points);
 }
