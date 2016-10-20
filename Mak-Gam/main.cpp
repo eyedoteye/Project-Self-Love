@@ -140,6 +140,8 @@ NavigatePath(double Dt)
 		Direction = GetAngleBetweenPoints(
 			Hero.Position.x, Hero.Position.y,
 			Position.x, Position.y);
+
+		double Distance = 50 * Dt;
 		
 		if(GetDistanceBetweenPoints(
 			Hero.Position.x, Hero.Position.y,
@@ -151,8 +153,8 @@ NavigatePath(double Dt)
 		}
 		else
 		{
-			Hero.Position.x += cos(Direction * 3.14 / 180.f) * Dt * 50;
-			Hero.Position.y += sin(Direction * 3.14 / 180.f) * Dt * 50;
+			Hero.Position.x += cos(Direction * 3.14 / 180.f) * Distance;
+			Hero.Position.y += sin(Direction * 3.14 / 180.f) * Distance;
 		}
 
 		Hero.DirectionFacing = Direction;
@@ -162,8 +164,10 @@ NavigatePath(double Dt)
 internal void
 BaddieMovement(double Dt)
 {
-	Baddie.Position.x += cos(Baddie.Position.y/10) * Dt*10;
-	Baddie.Position.y += sin(Baddie.Position.x/10) * Dt*10;
+	double Distance = 10 * Dt;
+
+	Baddie.Position.x += cos(Baddie.Position.y/10) * Distance;
+	Baddie.Position.y += sin(Baddie.Position.x/10) * Distance;
 }
 
 internal void
@@ -201,6 +205,34 @@ DrawTriangle(int X, int Y, double Angle, int HalfHeight)
 	Points[2].y = Y + sin((Angle - 120) * 3.14 / 180.f) * HalfHeight;
 
 	SDL_RenderDrawLines(renderer, Points, 4);
+}
+
+internal void
+DrawSemiCircle(
+	double X, double Y,
+	double Radius,
+	double Segments, double TotalSegments,
+	double Angle)
+{
+	CoordsQueue Points;
+	Points.Size = 0;
+	Points.StartIndex = 0;
+
+	double RadAngle = Angle * 3.14 / 180;
+
+	for(int Index = 0; Index < Segments; Index++)
+	{
+		Coords Point;
+		Point.x = X + cos(Angle + Index / TotalSegments * 3.14 * 2) * Radius;
+		Point.y = Y + sin(Angle + Index / TotalSegments * 3.14 * 2) * Radius;
+		CoordsQueuePush(&Points, &Point);
+	}
+	Coords Point;
+	Point.x = X + cos(Angle) * Radius;
+	Point.y = Y + sin(Angle) * Radius;
+	CoordsQueuePush(&Points, &Point);
+
+	RenderCoordsQueue(&Points);
 }
 
 internal void
@@ -307,7 +339,10 @@ main(int argc, char* args[])
 					 Hero.DirectionFacing,
 					 acos(30 * 3.14 / 180) * Hero.Radius * 2);
 		DrawCircle(Hero.Position.x, Hero.Position.y, Hero.Radius, 32);
-		DrawCircle(Baddie.Position.x, Baddie.Position.y, Baddie.Radius, 32);
+		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
+					   Baddie.Radius,
+					   16, 32,
+					   Hero.DirectionFacing);
 		SDL_RenderPresent(renderer);
 
 		SDL_Delay(1);
