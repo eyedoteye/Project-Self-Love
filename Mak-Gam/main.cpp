@@ -117,6 +117,7 @@ struct Hero_
 	int CurrentPathIndex;
 	double DirectionFacing;
 	double Radius;
+	double HalfHeight;
 };
 
 global_variable Hero_ Hero;
@@ -125,9 +126,19 @@ struct Baddie_
 {
 	Coords Position;
 	double Radius;
+	double Angle;
 };
 
 global_variable Baddie_ Baddie;
+
+struct BaddieDebri
+{
+	Coords Position;
+	double Radius;
+	double Angle;
+	double Segments;
+	double TotalSegments;
+};
 
 internal void
 NavigatePath(double Dt)
@@ -187,6 +198,16 @@ CollideWithBaddie()
 		Baddie.Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
 		Baddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
 	}
+
+	double x = cos(Hero.DirectionFacing) * Hero.HalfHeight;
+	double y = sin(Hero.DirectionFacing) * Hero.HalfHeight;
+
+	double Direction = GetAngleBetweenPoints(
+		x, y,
+		Baddie.Position.x, Baddie.Position.y
+	);
+
+	Baddie.Angle = Direction;
 }
 
 internal void
@@ -342,7 +363,7 @@ main(int argc, char* args[])
 		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
 					   Baddie.Radius,
 					   16, 32,
-					   Hero.DirectionFacing);
+					   Baddie.Angle);
 		SDL_RenderPresent(renderer);
 
 		SDL_Delay(1);
