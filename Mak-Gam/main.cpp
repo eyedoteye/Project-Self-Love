@@ -230,23 +230,7 @@ DrawSemiCircle(
 internal void
 DrawCircle(double X, double Y, double Radius, double Segments)
 {
-	CoordsQueue Points;
-	Points.Size = 0;
-	Points.StartIndex = 0;
-
-	for(int Index = 0; Index < Segments; Index++)
-	{
-		Coords Point;
-		Point.x = X + cos(Index / Segments * 3.14 * 2) * Radius;
-		Point.y = Y + sin(Index / Segments * 3.14 * 2) * Radius;
-		CoordsQueuePush(&Points, &Point);
-	}
-	Coords Point;
-	Point.x = X + cos(0) * Radius;
-	Point.y = Y + sin(0) * Radius;
-	CoordsQueuePush(&Points, &Point);
-
-	RenderCoordsQueue(&Points);
+	DrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
 }
 
 internal void
