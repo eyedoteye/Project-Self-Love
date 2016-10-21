@@ -254,8 +254,6 @@ CollideWithBaddie()
 	double x = Hero.Position.x + cos(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
 	double y = Hero.Position.y + sin(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
 
-	DrawCircle(x, y, 10, 15);
-
 	Distance = GetDistanceBetweenPoints(
 		x, y,
 		Baddie.Position.x, Baddie.Position.y
@@ -357,11 +355,11 @@ main(int argc, char* args[])
 		DrawCircle(Hero.Position.x, Hero.Position.y, Hero.Radius, 32);
 		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
 					   Baddie.Radius,
-					   16, 32,
+					   17, 32,
 					   Baddie.Angle);
 		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
 					   Baddie.Radius,
-					   16, 32,
+					   17, 32,
 					   Baddie.Angle + 180);
 		SDL_RenderPresent(renderer);
 
