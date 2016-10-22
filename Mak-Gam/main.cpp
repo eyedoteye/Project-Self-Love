@@ -99,37 +99,28 @@ CoordsQueueClear(CoordsQueue *CQueue)
 internal void
 RenderCoordsQueue(CoordsQueue *CQueue)
 {
-	uint8_t StopIndex = CQueue->StartIndex + CQueue->Size - 1;
-	for(uint8_t Index = CQueue->StartIndex; Index != StopIndex; Index++)
+	if(CQueue->Size > 0)
 	{
-		Coords Position1 = CQueue->Positions[Index];
-		Coords Position2 = CQueue->Positions[(uint8_t)(Index + 1)];
-		SDL_RenderDrawLine(renderer,
-						   Position1.x, Position1.y,
-						   Position2.x, Position2.y);
+		uint8_t StopIndex = CQueue->StartIndex + CQueue->Size - 1;
+		for(uint8_t Index = CQueue->StartIndex; Index != StopIndex; Index++)
+		{
+			Coords Position1 = CQueue->Positions[Index];
+			Coords Position2 = CQueue->Positions[(uint8_t)(Index + 1)];
+			SDL_RenderDrawLine(renderer,
+							   Position1.x, Position1.y,
+							   Position2.x, Position2.y);
+		}
 	}
 }
 
-struct Hero_
-{
-	Coords Position;
-	CoordsQueue Waypoints;
-	int CurrentPathIndex;
-	double DirectionFacing;
-	double Radius;
-	double HalfHeight;
-};
-
-global_variable Hero_ Hero;
-
-struct Baddie_
+struct Baddie
 {
 	Coords Position;
 	double Radius;
 	double Angle;
 };
 
-global_variable Baddie_ Baddie;
+global_variable Baddie BigBaddie;
 
 struct BaddieDebri
 {
@@ -140,10 +131,41 @@ struct BaddieDebri
 	double TotalSegments;
 };
 
+struct Hero_
+{
+	Coords Position;
+	CoordsQueue Waypoints;
+	int CurrentPathIndex;
+	double DirectionFacing;
+	double Radius;
+	double HalfHeight;
+	bool InBaddie;
+	Baddie *ConnectedBaddie;
+	double DistanceRemaining;
+};
+
+global_variable Hero_ Hero;
+
+
 internal void
 NavigatePath(double Dt)
 {
-	if(Hero.Waypoints.Size > 1)
+	if(Hero.InBaddie) {
+		double Direction = Hero.ConnectedBaddie->Angle;
+		double Distance = 50 * Dt;
+		if(Hero.DistanceRemaining - Distance < 0)
+		{
+			Distance = Hero.DistanceRemaining;
+			Hero.InBaddie = false;
+			CoordsQueuePush(&Hero.Waypoints, &Hero.Position);
+		}
+
+		Hero.Position.x += cos(Direction * 3.14 / 180) * Distance;
+		Hero.Position.y += sin(Direction * 3.14 / 180) * Distance;
+
+		Hero.DistanceRemaining -= Distance;
+	}
+	else if(Hero.Waypoints.Size > 1)
 	{
 		double Direction;
 		Coords Position = CoordsQueuePeek2(&Hero.Waypoints);
@@ -175,10 +197,14 @@ NavigatePath(double Dt)
 internal void
 BaddieMovement(double Dt)
 {
-	double Distance = 10 * Dt;
+	if(!Hero.InBaddie)
+	{
+		double Distance = 10 * Dt;
 
-	Baddie.Position.x += cos(Baddie.Position.y/10) * Distance;
-	Baddie.Position.y += sin(Baddie.Position.x/10) * Distance;
+		BigBaddie.Position.x += cos(BigBaddie.Position.y/10) * Distance;
+		BigBaddie.Position.y += sin(BigBaddie.Position.x/10) * Distance;
+
+	}
 }
 
 internal void
@@ -236,37 +262,46 @@ DrawCircle(double X, double Y, double Radius, double Segments)
 internal void
 CollideWithBaddie()
 {
-	double Distance = GetDistanceBetweenPoints(
-		Hero.Position.x, Hero.Position.y,
-		Baddie.Position.x, Baddie.Position.y
-	);
-
-	if(Distance < Hero.Radius + Baddie.Radius)
+	if(!Hero.InBaddie)
 	{
-		double PushDistance = Baddie.Radius - (Distance - Hero.Radius);
-		double Direction = GetAngleBetweenPoints(
+		double Distance = GetDistanceBetweenPoints(
 			Hero.Position.x, Hero.Position.y,
-			Baddie.Position.x, Baddie.Position.y);
-		Baddie.Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
-		Baddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
-	}
-
-	double x = Hero.Position.x + cos(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
-	double y = Hero.Position.y + sin(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
-
-	Distance = GetDistanceBetweenPoints(
-		x, y,
-		Baddie.Position.x, Baddie.Position.y
-	);
-
-	if(Distance < Baddie.Radius)
-	{
-		double Direction = GetAngleBetweenPoints(
-			x, y,
-			Baddie.Position.x, Baddie.Position.y
+			BigBaddie.Position.x, BigBaddie.Position.y
 		);
 
-		Baddie.Angle = Direction;
+		//if(Distance < Hero.Radius + BigBaddie.Radius)
+		//{
+		//	double PushDistance = BigBaddie.Radius - (Distance - Hero.Radius);
+		//	double Direction = GetAngleBetweenPoints(
+		//		Hero.Position.x, Hero.Position.y,
+		//		BigBaddie.Position.x, BigBaddie.Position.y);
+		//	BigBaddie.Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
+		//	BigBaddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
+		//}
+
+
+
+		double x = Hero.Position.x + cos(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
+		double y = Hero.Position.y + sin(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
+
+		Distance = GetDistanceBetweenPoints(
+			x, y,
+			BigBaddie.Position.x, BigBaddie.Position.y
+		);
+
+		if(Distance < BigBaddie.Radius)
+		{
+			double Direction = GetAngleBetweenPoints(
+				x, y,
+				BigBaddie.Position.x, BigBaddie.Position.y
+			);
+
+			BigBaddie.Angle = Direction;
+			Hero.DistanceRemaining = BigBaddie.Radius * 2;
+			Hero.ConnectedBaddie = &BigBaddie;
+			Hero.InBaddie = true;
+			CoordsQueueClear(&Hero.Waypoints);
+		}
 	}
 }
 
@@ -300,9 +335,9 @@ main(int argc, char* args[])
 	CoordsQueueClear(&Hero.Waypoints);
 	CoordsQueuePush(&Hero.Waypoints, &Hero.Position);
 
-	Baddie.Position.x = SCREEN_WIDTH / 2;
-	Baddie.Position.y = SCREEN_HEIGHT / 2;
-	Baddie.Radius = 14;
+	BigBaddie.Position.x = SCREEN_WIDTH / 2;
+	BigBaddie.Position.y = SCREEN_HEIGHT / 2;
+	BigBaddie.Radius = 14;
 
 	while(Running) {
 		dt = SDL_GetTicks() - lastTime;
@@ -353,14 +388,14 @@ main(int argc, char* args[])
 					 Hero.DirectionFacing,
 					 Hero.HalfHeight);
 		DrawCircle(Hero.Position.x, Hero.Position.y, Hero.Radius, 32);
-		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
-					   Baddie.Radius,
+		DrawSemiCircle(BigBaddie.Position.x, BigBaddie.Position.y,
+					   BigBaddie.Radius,
 					   17, 32,
-					   Baddie.Angle);
-		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
-					   Baddie.Radius,
+					   BigBaddie.Angle);
+		DrawSemiCircle(BigBaddie.Position.x, BigBaddie.Position.y,
+					   BigBaddie.Radius,
 					   17, 32,
-					   Baddie.Angle + 180);
+					   BigBaddie.Angle + 180);
 		SDL_RenderPresent(renderer);
 
 		SDL_Delay(1);
