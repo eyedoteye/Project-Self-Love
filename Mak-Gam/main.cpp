@@ -116,15 +116,6 @@ struct Baddie
 
 global_variable Baddie BigBaddie;
 
-struct BaddieDebri
-{
-	Coords Position;
-	double Radius;
-	double Angle;
-	double Segments;
-	double TotalSegments;
-};
-
 struct Hero_
 {
 	Coords Position;
@@ -133,33 +124,14 @@ struct Hero_
 	double DirectionFacing;
 	double Radius;
 	double HalfHeight;
-	bool InBaddie;
-	Baddie *ConnectedBaddie;
-	double DistanceRemaining;
 };
 
 global_variable Hero_ Hero;
 
-
 internal void
 NavigatePath(double Dt)
 {
-	if(Hero.InBaddie) {
-		double Direction = Hero.ConnectedBaddie->Angle;
-		double Distance = 50 * Dt;
-		if(Hero.DistanceRemaining - Distance < 0)
-		{
-			Distance = Hero.DistanceRemaining;
-			Hero.InBaddie = false;
-			CoordsQueuePush(&Hero.Waypoints, &Hero.Position);
-		}
-
-		Hero.Position.x += cos(Direction * 3.14 / 180) * Distance;
-		Hero.Position.y += sin(Direction * 3.14 / 180) * Distance;
-
-		Hero.DistanceRemaining -= Distance;
-	}
-	else if(Hero.Waypoints.Size > 1)
+	if(Hero.Waypoints.Size > 1)
 	{
 		double Direction;
 		Coords Position = CoordsQueuePeek2(&Hero.Waypoints);
@@ -191,14 +163,10 @@ NavigatePath(double Dt)
 internal void
 BaddieMovement(double Dt)
 {
-	if(!Hero.InBaddie)
-	{
-		double Distance = 10 * Dt;
+	double Distance = 10 * Dt;
 
-		BigBaddie.Position.x += cos(BigBaddie.Position.y/10) * Distance;
-		BigBaddie.Position.y += sin(BigBaddie.Position.x/10) * Distance;
-
-	}
+	BigBaddie.Position.x += cos(BigBaddie.Position.y/10) * Distance;
+	BigBaddie.Position.y += sin(BigBaddie.Position.x/10) * Distance;
 }
 
 internal void
@@ -256,44 +224,37 @@ DrawCircle(double X, double Y, double Radius, double Segments)
 internal void
 CollideWithBaddie()
 {
-	if(!Hero.InBaddie)
+	double Distance = GetDistanceBetweenPoints(
+		Hero.Position.x, Hero.Position.y,
+		BigBaddie.Position.x, BigBaddie.Position.y
+	);
+
+	if(Distance < Hero.Radius + BigBaddie.Radius)
 	{
-		double Distance = GetDistanceBetweenPoints(
+		double PushDistance = BigBaddie.Radius - (Distance - Hero.Radius);
+		double Direction = GetAngleBetweenPoints(
 			Hero.Position.x, Hero.Position.y,
-			BigBaddie.Position.x, BigBaddie.Position.y
-		);
+			BigBaddie.Position.x, BigBaddie.Position.y);
+		BigBaddie.Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
+		BigBaddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
+	}
 
-		//if(Distance < Hero.Radius + BigBaddie.Radius)
-		//{
-		//	double PushDistance = BigBaddie.Radius - (Distance - Hero.Radius);
-		//	double Direction = GetAngleBetweenPoints(
-		//		Hero.Position.x, Hero.Position.y,
-		//		BigBaddie.Position.x, BigBaddie.Position.y);
-		//	BigBaddie.Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
-		//	BigBaddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
-		//}
+	double x = Hero.Position.x + cos(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
+	double y = Hero.Position.y + sin(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
 
-		double x = Hero.Position.x + cos(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
-		double y = Hero.Position.y + sin(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
+	Distance = GetDistanceBetweenPoints(
+		x, y,
+		BigBaddie.Position.x, BigBaddie.Position.y
+	);
 
-		Distance = GetDistanceBetweenPoints(
+	if(Distance < BigBaddie.Radius)
+	{
+		double Direction = GetAngleBetweenPoints(
 			x, y,
 			BigBaddie.Position.x, BigBaddie.Position.y
 		);
 
-		if(Distance < BigBaddie.Radius)
-		{
-			double Direction = GetAngleBetweenPoints(
-				x, y,
-				BigBaddie.Position.x, BigBaddie.Position.y
-			);
-
-			BigBaddie.Angle = Direction;
-			Hero.DistanceRemaining = BigBaddie.Radius * 2;
-			Hero.ConnectedBaddie = &BigBaddie;
-			Hero.InBaddie = true;
-			CoordsQueueClear(&Hero.Waypoints);
-		}
+		BigBaddie.Angle = Direction;
 	}
 }
 
@@ -382,11 +343,11 @@ main(int argc, char* args[])
 		DrawCircle(Hero.Position.x, Hero.Position.y, Hero.Radius, 32);
 		DrawSemiCircle(BigBaddie.Position.x, BigBaddie.Position.y,
 					   BigBaddie.Radius,
-					   17, 32,
+					   16, 32,
 					   BigBaddie.Angle);
 		DrawSemiCircle(BigBaddie.Position.x, BigBaddie.Position.y,
 					   BigBaddie.Radius,
-					   17, 32,
+					   16, 32,
 					   BigBaddie.Angle + 180);
 		SDL_RenderPresent(GlobalRenderer);
 
