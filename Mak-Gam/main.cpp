@@ -12,16 +12,10 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 270
 
-global_variable bool Running = true;
+global_variable bool GlobalRunning = true;
 
-global_variable SDL_Point Clicks[255];
-global_variable uint8_t ClicksSize;
-
-global_variable SDL_Point Paths[255];
-global_variable uint8_t PathSize;
-
-SDL_Window *window;
-SDL_Renderer *renderer;
+global_variable SDL_Window *GlobalWindow;
+global_variable SDL_Renderer *GlobalRenderer;
 
 internal double
 GetDistanceBetweenPoints(double X1, double Y1, double X2, double Y2)
@@ -106,7 +100,7 @@ RenderCoordsQueue(CoordsQueue *CQueue)
 		{
 			Coords Position1 = CQueue->Positions[Index];
 			Coords Position2 = CQueue->Positions[(uint8_t)(Index + 1)];
-			SDL_RenderDrawLine(renderer,
+			SDL_RenderDrawLine(GlobalRenderer,
 							   Position1.x, Position1.y,
 							   Position2.x, Position2.y);
 		}
@@ -222,7 +216,7 @@ DrawTriangle(int X, int Y, double Angle, int HalfHeight)
 	Points[2].x = X + cos((Angle - 120) * 3.14 / 180.f) * HalfHeight;
 	Points[2].y = Y + sin((Angle - 120) * 3.14 / 180.f) * HalfHeight;
 
-	SDL_RenderDrawLines(renderer, Points, 4);
+	SDL_RenderDrawLines(GlobalRenderer, Points, 4);
 }
 
 internal void
@@ -279,8 +273,6 @@ CollideWithBaddie()
 		//	BigBaddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
 		//}
 
-
-
 		double x = Hero.Position.x + cos(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
 		double y = Hero.Position.y + sin(Hero.DirectionFacing * 3.14 / 180.f) * Hero.HalfHeight;
 
@@ -313,12 +305,12 @@ main(int argc, char* args[])
 		return 1;
 	}
 
-	window = SDL_CreateWindow("SDL Test",
+	GlobalWindow = SDL_CreateWindow("SDL Test",
 							  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 							  SCREEN_WIDTH, SCREEN_HEIGHT,
 							  0);
 	
-	renderer = SDL_CreateRenderer(window, -1, 0);
+	GlobalRenderer = SDL_CreateRenderer(GlobalWindow, -1, 0);
 
 	SDL_Event e;
 	uint32_t dt, lastTime = SDL_GetTicks();
@@ -339,7 +331,7 @@ main(int argc, char* args[])
 	BigBaddie.Position.y = SCREEN_HEIGHT / 2;
 	BigBaddie.Radius = 14;
 
-	while(Running) {
+	while(GlobalRunning) {
 		dt = SDL_GetTicks() - lastTime;
 		lastTime = SDL_GetTicks();
 		
@@ -349,7 +341,7 @@ main(int argc, char* args[])
 			{
 				case SDL_QUIT:
 				{
-					Running = false;
+					GlobalRunning = false;
 				} break;
 				case SDL_MOUSEBUTTONDOWN:
 				{
@@ -375,14 +367,14 @@ main(int argc, char* args[])
 		BaddieMovement(dt / 1000.f);
 		CollideWithBaddie();
 
-		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-		SDL_RenderClear(renderer);
-		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-		SDL_RenderFillRect(renderer, &fillRect);
+		SDL_SetRenderDrawColor(GlobalRenderer, 255, 0, 0, 255);
+		SDL_RenderClear(GlobalRenderer);
+		SDL_SetRenderDrawColor(GlobalRenderer, 0, 255, 0, 255);
+		SDL_RenderFillRect(GlobalRenderer, &fillRect);
 
-		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+		SDL_SetRenderDrawColor(GlobalRenderer, 255, 255, 255, 255);
 		RenderCoordsQueue(&Hero.Waypoints);
-		SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+		SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
 
 		DrawTriangle(Hero.Position.x, Hero.Position.y,
 					 Hero.DirectionFacing,
@@ -396,7 +388,7 @@ main(int argc, char* args[])
 					   BigBaddie.Radius,
 					   17, 32,
 					   BigBaddie.Angle + 180);
-		SDL_RenderPresent(renderer);
+		SDL_RenderPresent(GlobalRenderer);
 
 		SDL_Delay(1);
 	}
