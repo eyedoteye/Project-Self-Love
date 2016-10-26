@@ -126,6 +126,21 @@ struct hero
 	double HalfHeight;
 };
 
+struct scene
+{
+	baddie Baddies[255];
+	int BaddieCount;
+};
+
+internal void
+AddBaddieToScene(baddie *Baddie, scene *Scene)
+{
+	Scene->Baddies[Scene->BaddieCount].Angle = Baddie->Angle;
+	Scene->Baddies[Scene->BaddieCount].Position = Baddie->Position;
+	Scene->Baddies[Scene->BaddieCount].Radius = Baddie->Radius;
+	Scene->BaddieCount++;
+}
+
 global_variable hero GlobalHero;
 
 internal void
@@ -161,12 +176,12 @@ NavigatePath(double Dt)
 }
 
 internal void
-BaddieMovement(double Dt)
+BaddieMovement(baddie *Baddie, double Dt)
 {
 	double Distance = 10 * Dt;
 
-	GlobalBaddie.Position.x += cos(GlobalBaddie.Position.y/10) * Distance;
-	GlobalBaddie.Position.y += sin(GlobalBaddie.Position.x/10) * Distance;
+	Baddie->Position.x += cos(Baddie->Position.y/10) * Distance;
+	Baddie->Position.y += sin(Baddie->Position.x/10) * Distance;
 }
 
 internal void
@@ -222,21 +237,39 @@ DrawCircle(double X, double Y, double Radius, double Segments)
 }
 
 internal void
-CollideWithBaddie()
+RenderScene(scene *Scene)
+{
+	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
+	{
+		baddie Baddie = Scene->Baddies[BaddieIndex];
+
+		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
+					   Baddie.Radius,
+					   16, 32,
+					   Baddie.Angle);
+		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
+					   Baddie.Radius,
+					   16, 32,
+					   Baddie.Angle + 180);
+	}
+}
+
+internal void
+CollideWithBaddie(baddie *Baddie)
 {
 	double Distance = GetDistanceBetweenPoints(
 		GlobalHero.Position.x, GlobalHero.Position.y,
-		GlobalBaddie.Position.x, GlobalBaddie.Position.y
+		Baddie->Position.x, Baddie->Position.y
 	);
 
-	if(Distance < GlobalHero.Radius + GlobalBaddie.Radius)
+	if(Distance < GlobalHero.Radius + Baddie->Radius)
 	{
-		double PushDistance = GlobalBaddie.Radius - (Distance - GlobalHero.Radius);
+		double PushDistance = Baddie->Radius - (Distance - GlobalHero.Radius);
 		double Direction = GetAngleBetweenPoints(
 			GlobalHero.Position.x, GlobalHero.Position.y,
-			GlobalBaddie.Position.x, GlobalBaddie.Position.y);
-		GlobalBaddie.Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
-		GlobalBaddie.Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
+			Baddie->Position.x, Baddie->Position.y);
+		Baddie->Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
+		Baddie->Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
 	}
 
 	double x = GlobalHero.Position.x + cos(GlobalHero.DirectionFacing * 3.14 / 180.f) * GlobalHero.HalfHeight;
@@ -244,17 +277,17 @@ CollideWithBaddie()
 
 	Distance = GetDistanceBetweenPoints(
 		x, y,
-		GlobalBaddie.Position.x, GlobalBaddie.Position.y
+		Baddie->Position.x, Baddie->Position.y
 	);
 
-	if(Distance < GlobalBaddie.Radius)
+	if(Distance < Baddie->Radius)
 	{
 		double Direction = GetAngleBetweenPoints(
 			x, y,
-			GlobalBaddie.Position.x, GlobalBaddie.Position.y
+			Baddie->Position.x, Baddie->Position.y
 		);
 
-		GlobalBaddie.Angle = Direction;
+		Baddie->Angle = Direction;
 	}
 }
 
@@ -288,9 +321,15 @@ main(int argc, char* args[])
 	CoordsQueueClear(&GlobalHero.Waypoints);
 	CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
 
-	GlobalBaddie.Position.x = SCREEN_WIDTH / 2;
-	GlobalBaddie.Position.y = SCREEN_HEIGHT / 2;
-	GlobalBaddie.Radius = 14;
+	baddie Baddie = {};
+
+	Baddie.Position.x = SCREEN_WIDTH / 2;
+	Baddie.Position.y = SCREEN_HEIGHT / 2;
+	Baddie.Radius = 14;
+
+	scene Scene = {};
+
+	AddBaddieToScene(&Baddie, &Scene);
 
 	while(GlobalRunning) {
 		dt = SDL_GetTicks() - lastTime;
@@ -325,8 +364,8 @@ main(int argc, char* args[])
 		}
 
 		NavigatePath(dt/1000.f);
-		BaddieMovement(dt / 1000.f);
-		CollideWithBaddie();
+		BaddieMovement(&(Scene.Baddies[0]), dt / 1000.f);
+		CollideWithBaddie(&(Scene.Baddies[0]));
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 255, 0, 0, 255);
 		SDL_RenderClear(GlobalRenderer);
@@ -341,14 +380,7 @@ main(int argc, char* args[])
 					 GlobalHero.DirectionFacing,
 					 GlobalHero.HalfHeight);
 		DrawCircle(GlobalHero.Position.x, GlobalHero.Position.y, GlobalHero.Radius, 32);
-		DrawSemiCircle(GlobalBaddie.Position.x, GlobalBaddie.Position.y,
-					   GlobalBaddie.Radius,
-					   16, 32,
-					   GlobalBaddie.Angle);
-		DrawSemiCircle(GlobalBaddie.Position.x, GlobalBaddie.Position.y,
-					   GlobalBaddie.Radius,
-					   16, 32,
-					   GlobalBaddie.Angle + 180);
+		RenderScene(&Scene);
 		SDL_RenderPresent(GlobalRenderer);
 
 		SDL_Delay(1);
