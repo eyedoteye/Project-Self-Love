@@ -17,6 +17,8 @@ global_variable bool GlobalRunning = true;
 global_variable SDL_Window *GlobalWindow;
 global_variable SDL_Renderer *GlobalRenderer;
 
+global_variable double GlobalDt;
+
 internal double
 GetDistanceBetweenPoints(double X1, double Y1, double X2, double Y2)
 {
@@ -114,8 +116,6 @@ struct baddie
 	double Angle;
 };
 
-global_variable baddie GlobalBaddie;
-
 struct hero
 {
 	coords Position;
@@ -144,7 +144,7 @@ AddBaddieToScene(baddie *Baddie, scene *Scene)
 global_variable hero GlobalHero;
 
 internal void
-NavigatePath(double Dt)
+NavigatePath()
 {
 	if(GlobalHero.Waypoints.Size > 1)
 	{
@@ -155,11 +155,11 @@ NavigatePath(double Dt)
 			GlobalHero.Position.x, GlobalHero.Position.y,
 			Position.x, Position.y);
 
-		double Distance = 50 * Dt;
+		double Distance = 50 * GlobalDt;
 		
 		if(GetDistanceBetweenPoints(
 			GlobalHero.Position.x, GlobalHero.Position.y,
-			Position.x, Position.y) < 50 * Dt)
+			Position.x, Position.y) < Distance)
 		{
 			CoordsQueuePop(&GlobalHero.Waypoints);
 			GlobalHero.Position.x = Position.x;
@@ -176,9 +176,9 @@ NavigatePath(double Dt)
 }
 
 internal void
-BaddieMovement(baddie *Baddie, double Dt)
+BaddieMovement(baddie *Baddie)
 {
-	double Distance = 10 * Dt;
+	double Distance = 10 * GlobalDt;
 
 	Baddie->Position.x += cos(Baddie->Position.y/10) * Distance;
 	Baddie->Position.y += sin(Baddie->Position.x/10) * Distance;
@@ -237,21 +237,31 @@ DrawCircle(double X, double Y, double Radius, double Segments)
 }
 
 internal void
-RenderScene(scene *Scene)
+RenderBaddie(baddie *Baddie)
+{
+	DrawSemiCircle(Baddie->Position.x, Baddie->Position.y,
+				   Baddie->Radius,
+				   16, 32,
+				   Baddie->Angle);
+	DrawSemiCircle(Baddie->Position.x, Baddie->Position.y,
+				   Baddie->Radius,
+				   16, 32,
+				   Baddie->Angle + 180);
+}
+
+internal void
+RunOnBaddiesInScene(scene *Scene, void (*BaddieFunction)(baddie*))
 {
 	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
 	{
-		baddie Baddie = Scene->Baddies[BaddieIndex];
-
-		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
-					   Baddie.Radius,
-					   16, 32,
-					   Baddie.Angle);
-		DrawSemiCircle(Baddie.Position.x, Baddie.Position.y,
-					   Baddie.Radius,
-					   16, 32,
-					   Baddie.Angle + 180);
+		BaddieFunction(&(Scene->Baddies[BaddieIndex]));
 	}
+}
+
+internal void
+RenderScene(scene *Scene)
+{
+	RunOnBaddiesInScene(Scene, RenderBaddie);
 }
 
 internal void
@@ -307,7 +317,7 @@ main(int argc, char* args[])
 	GlobalRenderer = SDL_CreateRenderer(GlobalWindow, -1, 0);
 
 	SDL_Event e;
-	uint32_t dt, lastTime = SDL_GetTicks();
+	uint32_t lastTime = SDL_GetTicks();
 
 	SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
 						SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
@@ -330,9 +340,11 @@ main(int argc, char* args[])
 	scene Scene = {};
 
 	AddBaddieToScene(&Baddie, &Scene);
+	Baddie.Position.x += SCREEN_WIDTH / 4;
+	AddBaddieToScene(&Baddie, &Scene);
 
 	while(GlobalRunning) {
-		dt = SDL_GetTicks() - lastTime;
+		GlobalDt = (SDL_GetTicks() - lastTime)/1000.f;
 		lastTime = SDL_GetTicks();
 		
 		while(SDL_PollEvent(&e) != 0)
@@ -362,10 +374,9 @@ main(int argc, char* args[])
 				} break;
 			}
 		}
-
-		NavigatePath(dt/1000.f);
-		BaddieMovement(&(Scene.Baddies[0]), dt / 1000.f);
-		CollideWithBaddie(&(Scene.Baddies[0]));
+		NavigatePath();
+		RunOnBaddiesInScene(&Scene, BaddieMovement);
+		RunOnBaddiesInScene(&Scene,CollideWithBaddie);
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 255, 0, 0, 255);
 		SDL_RenderClear(GlobalRenderer);
