@@ -181,9 +181,7 @@ AddBaddieToScene(baddie *Baddie, scene *Scene)
 	Scene->BaddieCount++;
 }
 
-global_variable hero GlobalHero;
-
-internal void
+/*internal void
 NavigatePath()
 {
 	if(GlobalHero.Waypoints.Size > 1)
@@ -213,7 +211,7 @@ NavigatePath()
 
 		GlobalHero.DirectionFacing = Direction;
 	}
-}
+}*/
 
 internal void
 BaddieMovement(baddie *Baddie)
@@ -305,25 +303,25 @@ RenderScene(scene *Scene)
 }
 
 internal void
-CollideWithBaddie(baddie *Baddie)
+CollideWithBaddie(hero *Hero, baddie *Baddie)
 {
 	double Distance = GetDistanceBetweenPoints(
-		GlobalHero.Position.x, GlobalHero.Position.y,
+		Hero->Position.x, Hero->Position.y,
 		Baddie->Position.x, Baddie->Position.y
 	);
 
-	if(Distance < GlobalHero.Radius + Baddie->Radius)
+	if(Distance < Hero->Radius + Baddie->Radius)
 	{
-		double PushDistance = Baddie->Radius - (Distance - GlobalHero.Radius);
+		double PushDistance = Baddie->Radius - (Distance - Hero->Radius);
 		double Direction = GetAngleBetweenPoints(
-			GlobalHero.Position.x, GlobalHero.Position.y,
+			Hero->Position.x, Hero->Position.y,
 			Baddie->Position.x, Baddie->Position.y);
 		Baddie->Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
 		Baddie->Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
 	}
 
-	double x = GlobalHero.Position.x + cos(GlobalHero.DirectionFacing * 3.14 / 180.f) * GlobalHero.HalfHeight;
-	double y = GlobalHero.Position.y + sin(GlobalHero.DirectionFacing * 3.14 / 180.f) * GlobalHero.HalfHeight;
+	double x = Hero->Position.x + cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	double y = Hero->Position.y + sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
 
 	Distance = GetDistanceBetweenPoints(
 		x, y,
@@ -405,7 +403,10 @@ RenderGame(input_state *Input, scene *Scene)
 	//NavigatePath();
 	MovePlayer(&Scene->Hero, Input);
 	RunOnBaddiesInScene(Scene, BaddieMovement);
-	//RunOnBaddiesInScene(Scene, CollideWithBaddie);
+	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
+	{
+		CollideWithBaddie(&Scene->Hero, &Scene->Baddies[BaddieIndex]);
+	}
 
 	RenderScene(Scene);
 }
@@ -432,8 +433,8 @@ main(int argc, char* args[])
 						SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 	
 	
-	CoordsQueueClear(&GlobalHero.Waypoints);
-	CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
+	//CoordsQueueClear(&GlobalHero.Waypoints);
+	//CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
 
 	baddie Baddie = {};
 
@@ -469,7 +470,7 @@ main(int argc, char* args[])
 				{
 					GlobalRunning = false;
 				} break;
-				case SDL_MOUSEBUTTONDOWN:
+				/*case SDL_MOUSEBUTTONDOWN:
 				{
 					SDL_MouseButtonEvent Event = e.button;
 					if(Event.button == SDL_BUTTON_LEFT)
@@ -485,7 +486,7 @@ main(int argc, char* args[])
 						CoordsQueueClear(&GlobalHero.Waypoints);
 						CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
 					}
-				} break;
+				} break;*/
 				case SDL_CONTROLLERAXISMOTION:
 				{
 					SDL_ControllerAxisEvent Event = e.caxis;
@@ -562,7 +563,7 @@ main(int argc, char* args[])
 		SDL_RenderFillRect(GlobalRenderer, &fillRect);
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 255, 255, 255, 255);
-		RenderCoordsQueue(&GlobalHero.Waypoints);
+		//RenderCoordsQueue(&GlobalHero.Waypoints);
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
 		RenderGame(&Input, &Scene);
