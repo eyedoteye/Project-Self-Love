@@ -21,7 +21,7 @@ global_variable bool GlobalRunning = true;
 global_variable SDL_Window *GlobalWindow;
 global_variable SDL_Renderer *GlobalRenderer;
 
-global_variable double GlobalDt;
+global_variable float GlobalDt;
 
 struct vector
 {
@@ -29,19 +29,19 @@ struct vector
 	float y;
 };
 
-internal double
-GetDistanceBetweenPoints(double X1, double Y1, double X2, double Y2)
+internal float
+GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)
 {
-	double X = X2 - X1;
-	double Y = Y2 - Y1;
+	float X = X2 - X1;
+	float Y = Y2 - Y1;
 	return sqrt(X * X + Y * Y);
 }
 
-internal double
-GetAngleBetweenPoints(double X1, double Y1, double X2, double Y2)
+internal float
+GetAngleBetweenPoints(float X1, float Y1, float X2, float Y2)
 {
-	double Y = Y2 - Y1;
-	double X = X2 - X1;
+	float Y = Y2 - Y1;
+	float X = X2 - X1;
 
 	return atan2(Y, X) * 180 / 3.14;
 }
@@ -87,17 +87,17 @@ struct input_state
 struct baddie
 {
 	vector Position;
-	double Radius;
-	double Angle;
+	float Radius;
+	float Angle;
 };
 
 struct hero
 {
 	vector Position;
 	int CurrentPathIndex;
-	double DirectionFacing;
-	double Radius;
-	double HalfHeight;
+	float DirectionFacing;
+	float Radius;
+	float HalfHeight;
 };
 
 struct scene
@@ -119,14 +119,14 @@ AddBaddieToScene(baddie *Baddie, scene *Scene)
 internal void
 BaddieMovement(baddie *Baddie)
 {
-	double Distance = 10 * GlobalDt;
+	float Distance = 10 * GlobalDt;
 
 	Baddie->Position.x += cos(Baddie->Position.y/10) * Distance;
 	Baddie->Position.y += sin(Baddie->Position.x/10) * Distance;
 }
 
 internal void
-DrawTriangle(int X, int Y, double Angle, int HalfHeight)
+DrawTriangle(int X, int Y, float Angle, int HalfHeight)
 {
 	SDL_Point Points[4];
 	Points[0].x = X + cos(Angle * 3.14 / 180.f) * HalfHeight;
@@ -146,10 +146,10 @@ DrawTriangle(int X, int Y, double Angle, int HalfHeight)
 
 internal void
 DrawSemiCircle(
-	double X, double Y,
-	double Radius,
-	double Segments, double TotalSegments,
-	double Angle)
+	float X, float Y,
+	float Radius,
+	float Segments, float TotalSegments,
+	float Angle)
 {
 	float RadAngle = Angle * 3.14 / 180;
 
@@ -177,9 +177,21 @@ DrawSemiCircle(
 }
 
 internal void
-DrawCircle(double X, double Y, double Radius, double Segments)
+DrawCircle(float X, float Y, float Radius, float Segments)
 {
 	DrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
+}
+
+internal void
+DrawBox(float X, float Y, float Width, float Height)
+{
+	SDL_Rect FillRect;
+	FillRect.x = (int)X;
+	FillRect.y = (int)Y;
+	FillRect.w = (int)Width;
+	FillRect.h = (int)Height;
+
+	SDL_RenderDrawRect(GlobalRenderer, &FillRect);
 }
 
 internal void
@@ -208,28 +220,35 @@ internal void
 RenderScene(scene *Scene)
 {
 	RunOnBaddiesInScene(Scene, RenderBaddie);
+
+	DrawTriangle(Scene->Hero.Position.x, Scene->Hero.Position.y,
+				 Scene->Hero.DirectionFacing,
+				 Scene->Hero.HalfHeight);
+	DrawCircle(Scene->Hero.Position.x, Scene->Hero.Position.y, Scene->Hero.Radius, 32);
+//	DrawBox(Scene->Hero.Position.x - Scene->Hero.HalfHeight, Scene->Hero.Position.y - Scene->Hero.HalfHeight,
+//			Scene->Hero.HalfHeight * 2, Scene->Hero.HalfHeight * 2);
 }
 
 internal void
 CollideWithBaddie(hero *Hero, baddie *Baddie)
 {
-	double Distance = GetDistanceBetweenPoints(
+	float Distance = GetDistanceBetweenPoints(
 		Hero->Position.x, Hero->Position.y,
 		Baddie->Position.x, Baddie->Position.y
 	);
 
 	if(Distance < Hero->Radius + Baddie->Radius)
 	{
-		double PushDistance = Baddie->Radius - (Distance - Hero->Radius);
-		double Direction = GetAngleBetweenPoints(
+		float PushDistance = Baddie->Radius - (Distance - Hero->Radius);
+		float Direction = GetAngleBetweenPoints(
 			Hero->Position.x, Hero->Position.y,
 			Baddie->Position.x, Baddie->Position.y);
 		Baddie->Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
 		Baddie->Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
 	}
 
-	double x = Hero->Position.x + cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
-	double y = Hero->Position.y + sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	float x = Hero->Position.x + cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	float y = Hero->Position.y + sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
 
 	Distance = GetDistanceBetweenPoints(
 		x, y,
@@ -238,7 +257,7 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 
 	if(Distance < Baddie->Radius)
 	{
-		double Direction = GetAngleBetweenPoints(
+		float Direction = GetAngleBetweenPoints(
 			x, y,
 			Baddie->Position.x, Baddie->Position.y
 		);
@@ -443,11 +462,6 @@ main(int argc, char* args[])
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
 		RenderGame(&Input, &Scene);
-
-		DrawTriangle(Scene.Hero.Position.x, Scene.Hero.Position.y,
-					 Scene.Hero.DirectionFacing,
-					 Scene.Hero.HalfHeight);
-		DrawCircle(Scene.Hero.Position.x, Scene.Hero.Position.y, Scene.Hero.Radius, 32);
 		
 		SDL_RenderPresent(GlobalRenderer);
 
