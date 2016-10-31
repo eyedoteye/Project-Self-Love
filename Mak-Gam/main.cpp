@@ -12,12 +12,22 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 270
 
+#define CLIP(X, A, B) ((X < A) ? A : ((X > B) ? B : X))
+#define SQRT2 1.41421356237
+#define ABS(X) (X < 0 ? -X : X)
+
 global_variable bool GlobalRunning = true;
 
 global_variable SDL_Window *GlobalWindow;
 global_variable SDL_Renderer *GlobalRenderer;
 
 global_variable double GlobalDt;
+
+struct vector
+{
+	float x;
+	float y;
+};
 
 internal double
 GetDistanceBetweenPoints(double X1, double Y1, double X2, double Y2)
@@ -35,80 +45,6 @@ GetAngleBetweenPoints(double X1, double Y1, double X2, double Y2)
 
 	return atan2(Y, X) * 180 / 3.14;
 }
-
-struct coords
-{
-	double x, y;
-};
-
-struct coords_queue
-{
-	coords Positions[255];
-	uint8_t Size;
-	uint8_t StartIndex;
-};
-
-internal bool
-CoordsQueuePush(coords_queue *CQueue, coords *C)
-{ 
-	if((uint8_t)(CQueue->Size + CQueue->StartIndex + 1) == CQueue->StartIndex)
-	{
-		return false;
-	}
-
-	CQueue->Positions[CQueue->StartIndex + CQueue->Size].x = C->x;
-	CQueue->Positions[CQueue->StartIndex + CQueue->Size].y = C->y;
-	CQueue->Size++;
-
-	return true;
-}
-
-internal coords
-CoordsQueuePop(coords_queue *CQueue)
-{
-	coords Position = CQueue->Positions[CQueue->StartIndex];
-	CQueue->Size--;
-	CQueue->StartIndex++;
-
-	return Position;
-}
-
-internal coords
-CoordsQueuePeek(coords_queue *CQueue)
-{
-	return CQueue->Positions[CQueue->StartIndex];
-}
-
-internal coords
-CoordsQueuePeek2(coords_queue *CQueue)
-{
-	return CQueue->Positions[(uint8_t)(CQueue->StartIndex+1)];
-}
-
-internal void
-CoordsQueueClear(coords_queue *CQueue)
-{
-	CQueue->Size = 0;
-	CQueue->StartIndex = 0;
-}
-
-internal void
-RenderCoordsQueue(coords_queue *CQueue)
-{
-	if(CQueue->Size > 0)
-	{
-		uint8_t StopIndex = CQueue->StartIndex + CQueue->Size - 1;
-		for(uint8_t Index = CQueue->StartIndex; Index != StopIndex; Index++)
-		{
-			coords Position1 = CQueue->Positions[Index];
-			coords Position2 = CQueue->Positions[(uint8_t)(Index + 1)];
-			SDL_RenderDrawLine(GlobalRenderer,
-							   Position1.x, Position1.y,
-							   Position2.x, Position2.y);
-		}
-	}
-}
-
 
 struct button_state
 {
@@ -150,15 +86,14 @@ struct input_state
 
 struct baddie
 {
-	coords Position;
+	vector Position;
 	double Radius;
 	double Angle;
 };
 
 struct hero
 {
-	coords Position;
-	coords_queue Waypoints;
+	vector Position;
 	int CurrentPathIndex;
 	double DirectionFacing;
 	double Radius;
@@ -180,38 +115,6 @@ AddBaddieToScene(baddie *Baddie, scene *Scene)
 	Scene->Baddies[Scene->BaddieCount].Radius = Baddie->Radius;
 	Scene->BaddieCount++;
 }
-
-/*internal void
-NavigatePath()
-{
-	if(GlobalHero.Waypoints.Size > 1)
-	{
-		double Direction;
-		coords Position = CoordsQueuePeek2(&GlobalHero.Waypoints);
-
-		Direction = GetAngleBetweenPoints(
-			GlobalHero.Position.x, GlobalHero.Position.y,
-			Position.x, Position.y);
-
-		double Distance = 50 * GlobalDt;
-		
-		if(GetDistanceBetweenPoints(
-			GlobalHero.Position.x, GlobalHero.Position.y,
-			Position.x, Position.y) < Distance)
-		{
-			CoordsQueuePop(&GlobalHero.Waypoints);
-			GlobalHero.Position.x = Position.x;
-			GlobalHero.Position.y = Position.y;
-		}
-		else
-		{
-			GlobalHero.Position.x += cos(Direction * 3.14 / 180.f) * Distance;
-			GlobalHero.Position.y += sin(Direction * 3.14 / 180.f) * Distance;
-		}
-
-		GlobalHero.DirectionFacing = Direction;
-	}
-}*/
 
 internal void
 BaddieMovement(baddie *Baddie)
@@ -240,6 +143,7 @@ DrawTriangle(int X, int Y, double Angle, int HalfHeight)
 	SDL_RenderDrawLines(GlobalRenderer, Points, 4);
 }
 
+
 internal void
 DrawSemiCircle(
 	double X, double Y,
@@ -247,25 +151,29 @@ DrawSemiCircle(
 	double Segments, double TotalSegments,
 	double Angle)
 {
-	coords_queue Points;
-	Points.Size = 0;
-	Points.StartIndex = 0;
+	float RadAngle = Angle * 3.14 / 180;
 
-	double RadAngle = Angle * 3.14 / 180;
+	vector Position1;
+	vector Position2;
+	Position1.x = X + cos(RadAngle) * Radius;
+	Position1.y = Y + sin(RadAngle) * Radius;
 
-	for(int Index = 0; Index < Segments; Index++)
+	for(int PointNum = 0; PointNum < Segments; PointNum++)
 	{
-		coords Point;
-		Point.x = X + cos(RadAngle + Index / TotalSegments * 3.14 * 2) * Radius;
-		Point.y = Y + sin(RadAngle + Index / TotalSegments * 3.14 * 2) * Radius;
-		CoordsQueuePush(&Points, &Point);
+		Position2.x = X + cos(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
+		Position2.y = Y + sin(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
+		SDL_RenderDrawLine(GlobalRenderer,
+						   Position1.x, Position1.y,
+						   Position2.x, Position2.y);
+		Position1.x = Position2.x;
+		Position1.y = Position2.y;
 	}
-	coords Point;
-	Point.x = X + cos(RadAngle) * Radius;
-	Point.y = Y + sin(RadAngle) * Radius;
-	CoordsQueuePush(&Points, &Point);
 
-	RenderCoordsQueue(&Points);
+	Position2.x = X + cos(RadAngle) * Radius;
+	Position2.y = Y + sin(RadAngle) * Radius;
+	SDL_RenderDrawLine(GlobalRenderer,
+					   Position1.x, Position1.y,
+					   Position2.x, Position2.y);
 }
 
 internal void
@@ -338,16 +246,6 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 		Baddie->Angle = Direction;
 	}
 }
-
-struct vector
-{
-	float x;
-	float y;
-};
-
-#define CLIP(X, A, B) ((X < A) ? A : ((X > B) ? B : X))
-#define SQRT2 1.41421356237
-#define ABS(X) (X < 0 ? -X : X)
 
 internal void
 ProcessControllerMovement(controller_state *Controller, vector *Movement)
@@ -431,10 +329,6 @@ main(int argc, char* args[])
 
 	SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
 						SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
-	
-	
-	//CoordsQueueClear(&GlobalHero.Waypoints);
-	//CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
 
 	baddie Baddie = {};
 
@@ -470,23 +364,6 @@ main(int argc, char* args[])
 				{
 					GlobalRunning = false;
 				} break;
-				/*case SDL_MOUSEBUTTONDOWN:
-				{
-					SDL_MouseButtonEvent Event = e.button;
-					if(Event.button == SDL_BUTTON_LEFT)
-					{
-						coords Position;
-						Position.x = Event.x;
-						Position.y = Event.y;
-						CoordsQueuePush(&GlobalHero.Waypoints, &Position);
-
-					}
-					else if(Event.button == SDL_BUTTON_RIGHT)
-					{
-						CoordsQueueClear(&GlobalHero.Waypoints);
-						CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
-					}
-				} break;*/
 				case SDL_CONTROLLERAXISMOTION:
 				{
 					SDL_ControllerAxisEvent Event = e.caxis;
@@ -563,7 +440,6 @@ main(int argc, char* args[])
 		SDL_RenderFillRect(GlobalRenderer, &fillRect);
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 255, 255, 255, 255);
-		//RenderCoordsQueue(&GlobalHero.Waypoints);
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
 		RenderGame(&Input, &Scene);
