@@ -30,8 +30,8 @@ GetDistanceBetweenPoints(double X1, double Y1, double X2, double Y2)
 internal double
 GetAngleBetweenPoints(double X1, double Y1, double X2, double Y2)
 {
-	double X = X2 - X1;
 	double Y = Y2 - Y1;
+	double X = X2 - X1;
 
 	return atan2(Y, X) * 180 / 3.14;
 }
@@ -109,6 +109,45 @@ RenderCoordsQueue(coords_queue *CQueue)
 	}
 }
 
+
+struct button_state
+{
+	bool IsDownLastState;
+	uint32_t Duration;
+	bool IsDown;
+};
+
+// NOTE(sigmasleep): There needs to be a threshold for determining a change in direction.
+
+struct controller_state
+{
+	struct
+	{
+		float XLastState;
+		float YLastState;
+		uint32_t Duration;
+		float X;
+		float Y;
+	};
+
+	union
+	{
+		button_state Buttons[4];
+		struct
+		{
+			button_state Up;
+			button_state Down;
+			button_state Left;
+			button_state Right;
+		};
+	};
+};
+
+struct input_state
+{
+	controller_state Controllers[4];
+};
+
 struct baddie
 {
 	coords Position;
@@ -128,6 +167,7 @@ struct hero
 
 struct scene
 {
+	hero Hero;
 	baddie Baddies[255];
 	int BaddieCount;
 };
@@ -301,10 +341,79 @@ CollideWithBaddie(baddie *Baddie)
 	}
 }
 
+struct vector
+{
+	float x;
+	float y;
+};
+
+#define CLIP(X, A, B) ((X < A) ? A : ((X > B) ? B : X))
+#define SQRT2 1.41421356237
+#define ABS(X) (X < 0 ? -X : X)
+
+internal void
+ProcessControllerMovement(controller_state *Controller, vector *Movement)
+{
+	float x = 0;
+	float y = 0;
+
+	if(Controller->Left.IsDown)
+	{
+		x -= 1;
+	}
+	if(Controller->Right.IsDown)
+	{
+		x += 1;
+	}
+	if(Controller->Up.IsDown)
+	{
+		y -= 1;
+	}
+	if(Controller->Down.IsDown)
+	{
+		y += 1;
+	}
+
+	if(x != 0 && y != 0)
+	{
+		x /= SQRT2;
+		y /= SQRT2;
+	}
+
+	x += Controller->X;
+	y += Controller->Y;
+
+	Movement->x = CLIP(x, -1.f, 1.f);
+	Movement->y = CLIP(y, -1.f, 1.f);
+}
+
+internal void
+MovePlayer(hero *Hero, input_state *Input)
+{
+	vector InputMovement;
+
+	ProcessControllerMovement(&Input->Controllers[0], &InputMovement);
+
+	Hero->Position.x += 100 * InputMovement.x * GlobalDt;
+	Hero->Position.y += 100 * InputMovement.y * GlobalDt;
+}
+
+// Note(sigmasleep): This should not have any calls to SDL in it
+internal void
+RenderGame(input_state *Input, scene *Scene)
+{
+	//NavigatePath();
+	MovePlayer(&Scene->Hero, Input);
+	RunOnBaddiesInScene(Scene, BaddieMovement);
+	//RunOnBaddiesInScene(Scene, CollideWithBaddie);
+
+	RenderScene(Scene);
+}
+
 int
 main(int argc, char* args[])
 {
-	if(SDL_Init(SDL_INIT_VIDEO) < 0)
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
 	{
 		return 1;
 	}
@@ -322,12 +431,7 @@ main(int argc, char* args[])
 	SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
 						SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 	
-	GlobalHero.Position.x = 0;
-	GlobalHero.Position.y = 0;
-	GlobalHero.DirectionFacing = 0;
-	GlobalHero.CurrentPathIndex = 0;
-	GlobalHero.Radius = 7;
-	GlobalHero.HalfHeight = acos(30 * 3.14 / 180) * GlobalHero.Radius * 2;
+	
 	CoordsQueueClear(&GlobalHero.Waypoints);
 	CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
 
@@ -343,6 +447,16 @@ main(int argc, char* args[])
 	Baddie.Position.x += SCREEN_WIDTH / 4;
 	AddBaddieToScene(&Baddie, &Scene);
 
+	Scene.Hero.Position.x = SCREEN_WIDTH / 4;
+	Scene.Hero.Position.y = SCREEN_HEIGHT / 4;
+	Scene.Hero.DirectionFacing = 0;
+	Scene.Hero.CurrentPathIndex = 0;
+	Scene.Hero.Radius = 7;
+	Scene.Hero.HalfHeight = acos(30 * 3.14 / 180) * Scene.Hero.Radius * 2;
+
+	input_state Input = {};
+
+	SDL_GameController *Controller1 = SDL_GameControllerOpen(0);
 	while(GlobalRunning) {
 		GlobalDt = (SDL_GetTicks() - lastTime)/1000.f;
 		lastTime = SDL_GetTicks();
@@ -372,11 +486,75 @@ main(int argc, char* args[])
 						CoordsQueuePush(&GlobalHero.Waypoints, &GlobalHero.Position);
 					}
 				} break;
+				case SDL_CONTROLLERAXISMOTION:
+				{
+					SDL_ControllerAxisEvent Event = e.caxis;
+
+					// Note(sigmasleep): Normalization via division by int16 min/max values
+					float Value = Event.value < 0 ? Event.value / 32768.f : Event.value / 32767.f;
+
+					// Todo(sigmasleep): Move deadzone to a better place
+					float Deadzone = 0.2;
+					Value = ABS(Value) > Deadzone ? Value : 0;
+
+					if(Event.which < 4)
+					{
+						controller_state* Controller = &Input.Controllers[Event.which];
+
+						switch(Event.axis)
+						{
+							case SDL_CONTROLLER_AXIS_LEFTX:
+							{
+								Controller->XLastState = Controller->X;
+
+								Controller->X = Value;
+							} break;
+							case SDL_CONTROLLER_AXIS_LEFTY:
+							{
+								Controller->YLastState = Controller->Y;
+
+								Controller->Y = Value;
+							} break;
+						}
+					}
+				} break;
+				case SDL_CONTROLLERBUTTONDOWN:
+				case SDL_CONTROLLERBUTTONUP:
+				{
+					SDL_ControllerButtonEvent Event = e.cbutton;
+
+					bool IsDown = Event.state == SDL_PRESSED;
+
+					if(Event.which < 4)
+					{
+						controller_state* Controller = &Input.Controllers[Event.which];
+						switch(Event.button)
+						{
+						case SDL_CONTROLLER_BUTTON_DPAD_UP:
+						{
+							Controller->Up.IsDownLastState = Controller->Up.IsDown;
+							Controller->Up.IsDown = IsDown;
+						} break;
+						case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+						{
+							Controller->Down.IsDownLastState = Controller->Down.IsDown;
+							Controller->Down.IsDown = IsDown;
+						} break;
+						case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+						{
+							Controller->Left.IsDownLastState = Controller->Left.IsDown;
+							Controller->Left.IsDown = IsDown;
+						} break;
+						case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+						{
+							Controller->Right.IsDownLastState = Controller->Right.IsDown;
+							Controller->Right.IsDown = IsDown;
+						} break;
+						}
+					}
+				} break;
 			}
 		}
-		NavigatePath();
-		RunOnBaddiesInScene(&Scene, BaddieMovement);
-		RunOnBaddiesInScene(&Scene,CollideWithBaddie);
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 255, 0, 0, 255);
 		SDL_RenderClear(GlobalRenderer);
@@ -385,17 +563,21 @@ main(int argc, char* args[])
 
 		SDL_SetRenderDrawColor(GlobalRenderer, 255, 255, 255, 255);
 		RenderCoordsQueue(&GlobalHero.Waypoints);
-		SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
 
-		DrawTriangle(GlobalHero.Position.x, GlobalHero.Position.y,
-					 GlobalHero.DirectionFacing,
-					 GlobalHero.HalfHeight);
-		DrawCircle(GlobalHero.Position.x, GlobalHero.Position.y, GlobalHero.Radius, 32);
-		RenderScene(&Scene);
+		SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
+		RenderGame(&Input, &Scene);
+
+		DrawTriangle(Scene.Hero.Position.x, Scene.Hero.Position.y,
+					 Scene.Hero.DirectionFacing,
+					 Scene.Hero.HalfHeight);
+		DrawCircle(Scene.Hero.Position.x, Scene.Hero.Position.y, Scene.Hero.Radius, 32);
+		
 		SDL_RenderPresent(GlobalRenderer);
 
 		SDL_Delay(1);
 	}
+
+	SDL_GameControllerClose(Controller1);
 
 	SDL_Quit();
 
