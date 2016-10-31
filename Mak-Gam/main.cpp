@@ -53,8 +53,6 @@ struct button_state
 	bool IsDown;
 };
 
-// NOTE(sigmasleep): There needs to be a threshold for determining a change in direction.
-
 struct controller_state
 {
 	struct
@@ -219,6 +217,18 @@ RunOnBaddiesInScene(scene *Scene, void (*BaddieFunction)(baddie*))
 internal void
 RenderScene(scene *Scene)
 {
+	SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
+		SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+
+	SDL_SetRenderDrawColor(GlobalRenderer, 255, 0, 0, 255);
+	SDL_RenderClear(GlobalRenderer);
+	SDL_SetRenderDrawColor(GlobalRenderer, 0, 255, 0, 255);
+	SDL_RenderFillRect(GlobalRenderer, &fillRect);
+
+	SDL_SetRenderDrawColor(GlobalRenderer, 255, 255, 255, 255);
+
+	SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
+
 	RunOnBaddiesInScene(Scene, RenderBaddie);
 
 	DrawTriangle(Scene->Hero.Position.x, Scene->Hero.Position.y,
@@ -311,13 +321,15 @@ MovePlayer(hero *Hero, input_state *Input)
 
 	Hero->Position.x += 100 * InputMovement.x * GlobalDt;
 	Hero->Position.y += 100 * InputMovement.y * GlobalDt;
+	
+	if(InputMovement.y != 0 || InputMovement.x != 0)
+	Hero->DirectionFacing = atan2(InputMovement.y, InputMovement.x) * 180 / 3.14;
 }
 
 // Note(sigmasleep): This should not have any calls to SDL in it
 internal void
 RenderGame(input_state *Input, scene *Scene)
 {
-	//NavigatePath();
 	MovePlayer(&Scene->Hero, Input);
 	RunOnBaddiesInScene(Scene, BaddieMovement);
 	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
@@ -345,9 +357,6 @@ main(int argc, char* args[])
 
 	SDL_Event e;
 	uint32_t lastTime = SDL_GetTicks();
-
-	SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
-						SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 
 	baddie Baddie = {};
 
@@ -453,14 +462,6 @@ main(int argc, char* args[])
 			}
 		}
 
-		SDL_SetRenderDrawColor(GlobalRenderer, 255, 0, 0, 255);
-		SDL_RenderClear(GlobalRenderer);
-		SDL_SetRenderDrawColor(GlobalRenderer, 0, 255, 0, 255);
-		SDL_RenderFillRect(GlobalRenderer, &fillRect);
-
-		SDL_SetRenderDrawColor(GlobalRenderer, 255, 255, 255, 255);
-
-		SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
 		RenderGame(&Input, &Scene);
 		
 		SDL_RenderPresent(GlobalRenderer);
