@@ -25,8 +25,8 @@ global_variable float GlobalDt;
 
 struct vector
 {
-	float x;
-	float y;
+	float X;
+	float Y;
 };
 
 internal float
@@ -119,8 +119,8 @@ BaddieMovement(baddie *Baddie)
 {
 	float Distance = 10 * GlobalDt;
 
-	Baddie->Position.x += cos(Baddie->Position.y/10) * Distance;
-	Baddie->Position.y += sin(Baddie->Position.x/10) * Distance;
+	Baddie->Position.X += cos(Baddie->Position.Y/10) * Distance;
+	Baddie->Position.Y += sin(Baddie->Position.X/10) * Distance;
 }
 
 internal void
@@ -153,25 +153,25 @@ DrawSemiCircle(
 
 	vector Position1;
 	vector Position2;
-	Position1.x = X + cos(RadAngle) * Radius;
-	Position1.y = Y + sin(RadAngle) * Radius;
+	Position1.X = X + cos(RadAngle) * Radius;
+	Position1.Y = Y + sin(RadAngle) * Radius;
 
 	for(int PointNum = 0; PointNum < Segments; PointNum++)
 	{
-		Position2.x = X + cos(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
-		Position2.y = Y + sin(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
+		Position2.X = X + cos(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
+		Position2.Y = Y + sin(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
 		SDL_RenderDrawLine(GlobalRenderer,
-						   Position1.x, Position1.y,
-						   Position2.x, Position2.y);
-		Position1.x = Position2.x;
-		Position1.y = Position2.y;
+						   Position1.X, Position1.Y,
+						   Position2.X, Position2.Y);
+		Position1.X = Position2.X;
+		Position1.Y = Position2.Y;
 	}
 
-	Position2.x = X + cos(RadAngle) * Radius;
-	Position2.y = Y + sin(RadAngle) * Radius;
+	Position2.X = X + cos(RadAngle) * Radius;
+	Position2.Y = Y + sin(RadAngle) * Radius;
 	SDL_RenderDrawLine(GlobalRenderer,
-					   Position1.x, Position1.y,
-					   Position2.x, Position2.y);
+					   Position1.X, Position1.Y,
+					   Position2.X, Position2.Y);
 }
 
 internal void
@@ -195,11 +195,11 @@ DrawBox(float X, float Y, float Width, float Height)
 internal void
 RenderBaddie(baddie *Baddie)
 {
-	DrawSemiCircle(Baddie->Position.x, Baddie->Position.y,
+	DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
 				   Baddie->Radius,
 				   16, 32,
 				   Baddie->Angle);
-	DrawSemiCircle(Baddie->Position.x, Baddie->Position.y,
+	DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
 				   Baddie->Radius,
 				   16, 32,
 				   Baddie->Angle + 180);
@@ -231,18 +231,46 @@ RenderScene(scene *Scene)
 
 	RunOnBaddiesInScene(Scene, RenderBaddie);
 
-	DrawTriangle(Scene->Hero.Position.x, Scene->Hero.Position.y,
+	DrawTriangle(Scene->Hero.Position.X, Scene->Hero.Position.Y,
 				 Scene->Hero.DirectionFacing,
 				 Scene->Hero.HalfHeight);
-	DrawCircle(Scene->Hero.Position.x, Scene->Hero.Position.y, Scene->Hero.Radius, 32);
+	DrawCircle(Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius, 32);
 //	DrawBox(Scene->Hero.Position.x - Scene->Hero.HalfHeight, Scene->Hero.Position.y - Scene->Hero.HalfHeight,
 //			Scene->Hero.HalfHeight * 2, Scene->Hero.HalfHeight * 2);
+}
+
+internal bool
+FillCollisionVectorCircleToCircle(
+	vector *CollisionVector,
+	float X1, float Y1, float R1,
+	float X2, float Y2, float R2
+)
+{
+	float XDistance = X2 - X1;
+	float YDistance = Y2 - Y1;
+
+	float RTotal = R1 + R2;
+	float DistanceSquared = XDistance * XDistance + YDistance * YDistance;
+
+	if(DistanceSquared < RTotal * RTotal)
+	{
+		float Distance = sqrt(DistanceSquared);
+		float UnitXDistance = XDistance / Distance;
+		float UnitYDistance = YDistance / Distance;
+		float CollisionDistance = RTotal - Distance;
+		CollisionVector->X = UnitXDistance * CollisionDistance;
+		CollisionVector->Y = UnitYDistance * CollisionDistance;
+
+		return true;
+	}
+
+	return false;
 }
 
 internal void
 CollideWithBaddie(hero *Hero, baddie *Baddie)
 {
-	float Distance = GetDistanceBetweenPoints(
+	/*float Distance = GetDistanceBetweenPoints(
 		Hero->Position.x, Hero->Position.y,
 		Baddie->Position.x, Baddie->Position.y
 	);
@@ -255,21 +283,31 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 			Baddie->Position.x, Baddie->Position.y);
 		Baddie->Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
 		Baddie->Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
+	}*/
+	vector CollisionVector;
+
+	if(FillCollisionVectorCircleToCircle(&CollisionVector,
+										 Hero->Position.X, Hero->Position.Y, Hero->Radius,
+										 Baddie->Position.X, Baddie->Position.Y, Baddie->Radius))
+	{
+		Baddie->Position.X += CollisionVector.X;
+		Baddie->Position.Y += CollisionVector.Y;
 	}
+	
 
-	float x = Hero->Position.x + cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
-	float y = Hero->Position.y + sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	float X = Hero->Position.X + cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	float Y = Hero->Position.Y + sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
 
-	Distance = GetDistanceBetweenPoints(
-		x, y,
-		Baddie->Position.x, Baddie->Position.y
+	float Distance = GetDistanceBetweenPoints(
+		X, Y,
+		Baddie->Position.X, Baddie->Position.Y
 	);
 
 	if(Distance < Baddie->Radius)
 	{
 		float Direction = GetAngleBetweenPoints(
-			x, y,
-			Baddie->Position.x, Baddie->Position.y
+			X, Y,
+			Baddie->Position.X, Baddie->Position.Y
 		);
 
 		Baddie->Angle = Direction;
@@ -279,37 +317,37 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 internal void
 ProcessControllerMovement(controller_state *Controller, vector *Movement)
 {
-	float x = 0;
-	float y = 0;
+	float X = 0;
+	float Y = 0;
 
 	if(Controller->Left.IsDown)
 	{
-		x -= 1;
+		X -= 1;
 	}
 	if(Controller->Right.IsDown)
 	{
-		x += 1;
+		X += 1;
 	}
 	if(Controller->Up.IsDown)
 	{
-		y -= 1;
+		Y -= 1;
 	}
 	if(Controller->Down.IsDown)
 	{
-		y += 1;
+		Y += 1;
 	}
 
-	if(x != 0 && y != 0)
+	if(X != 0 && Y != 0)
 	{
-		x /= SQRT2;
-		y /= SQRT2;
+		X /= SQRT2;
+		Y /= SQRT2;
 	}
 
-	x += Controller->X;
-	y += Controller->Y;
+	X += Controller->X;
+	Y += Controller->Y;
 
-	Movement->x = CLIP(x, -1.f, 1.f);
-	Movement->y = CLIP(y, -1.f, 1.f);
+	Movement->X = CLIP(X, -1.f, 1.f);
+	Movement->Y = CLIP(Y, -1.f, 1.f);
 }
 
 internal void
@@ -319,11 +357,11 @@ MovePlayer(hero *Hero, input_state *Input)
 
 	ProcessControllerMovement(&Input->Controllers[0], &InputMovement);
 
-	Hero->Position.x += 100 * InputMovement.x * GlobalDt;
-	Hero->Position.y += 100 * InputMovement.y * GlobalDt;
+	Hero->Position.X += 100 * InputMovement.X * GlobalDt;
+	Hero->Position.Y += 100 * InputMovement.Y * GlobalDt;
 	
-	if(InputMovement.y != 0 || InputMovement.x != 0)
-	Hero->DirectionFacing = atan2(InputMovement.y, InputMovement.x) * 180 / 3.14;
+	if(InputMovement.Y != 0 || InputMovement.X != 0)
+	Hero->DirectionFacing = atan2(InputMovement.Y, InputMovement.X) * 180 / 3.14;
 }
 
 // Note(sigmasleep): This should not have any calls to SDL in it
@@ -360,18 +398,18 @@ main(int argc, char* args[])
 
 	baddie Baddie = {};
 
-	Baddie.Position.x = SCREEN_WIDTH / 2;
-	Baddie.Position.y = SCREEN_HEIGHT / 2;
+	Baddie.Position.X = SCREEN_WIDTH / 2;
+	Baddie.Position.Y = SCREEN_HEIGHT / 2;
 	Baddie.Radius = 14;
 
 	scene Scene = {};
 
 	AddBaddieToScene(&Baddie, &Scene);
-	Baddie.Position.x += SCREEN_WIDTH / 4;
+	Baddie.Position.X += SCREEN_WIDTH / 4;
 	AddBaddieToScene(&Baddie, &Scene);
 
-	Scene.Hero.Position.x = SCREEN_WIDTH / 4;
-	Scene.Hero.Position.y = SCREEN_HEIGHT / 4;
+	Scene.Hero.Position.X = SCREEN_WIDTH / 4;
+	Scene.Hero.Position.Y = SCREEN_HEIGHT / 4;
 	Scene.Hero.DirectionFacing = 0;
 	Scene.Hero.CurrentPathIndex = 0;
 	Scene.Hero.Radius = 7;
