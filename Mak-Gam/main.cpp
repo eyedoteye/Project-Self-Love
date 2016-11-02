@@ -119,8 +119,8 @@ BaddieMovement(baddie *Baddie)
 {
 	float Distance = 10 * GlobalDt;
 
-	Baddie->Position.X += cos(Baddie->Position.Y/10) * Distance;
-	Baddie->Position.Y += sin(Baddie->Position.X/10) * Distance;
+	Baddie->Position.X += cos(Baddie->Position.Y / 10) * Distance;
+	Baddie->Position.Y += sin(Baddie->Position.X / 10) * Distance;
 }
 
 internal void
@@ -204,11 +204,11 @@ RenderBaddie(baddie *Baddie)
 				   16, 32,
 				   Baddie->Angle + 180);
 	DrawBox(Baddie->Position.X - Baddie->Radius, Baddie->Position.Y - Baddie->Radius,
-			Baddie->Radius*2, Baddie->Radius*2);
+			Baddie->Radius * 2, Baddie->Radius * 2);
 }
 
 internal void
-RunOnBaddiesInScene(scene *Scene, void (*BaddieFunction)(baddie*))
+RunOnBaddiesInScene(scene *Scene, void(*BaddieFunction)(baddie*))
 {
 	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
 	{
@@ -277,34 +277,27 @@ FillCollisionVectorLineToCircle(
 	Hypotenuse.X = X3 - X1;
 	Hypotenuse.Y = Y3 - Y1;
 
-	vector LineNormal;
-	LineNormal.X = -1 * (Y2 - Y1);
-	LineNormal.Y = X2 - X1;
+	vector Line;
+	Line.X = X2 - X1;
+	Line.Y = Y2 - Y1;
 
-	float DotProduct = Hypotenuse.X * LineNormal.X + Hypotenuse.Y * LineNormal.Y;
+	float DotProduct = Hypotenuse.X * Line.X + Hypotenuse.Y * Line.Y;
 
-	float LineNormalLengthSquared = LineNormal.X * LineNormal.X + LineNormal.Y * LineNormal.Y;
-	float ProjectionConstant = (DotProduct / LineNormalLengthSquared);
+	float LineLengthSquared = Line.X * Line.X + Line.Y * Line.Y;
+
+	float ClippedDotProduct = CLIP(DotProduct, 0, LineLengthSquared);
+
+	float ProjectionConstant = (ClippedDotProduct / LineLengthSquared);
 
 	vector HypotenuseProjection;
-	HypotenuseProjection.X = ProjectionConstant * LineNormal.X;
-	HypotenuseProjection.Y = ProjectionConstant * LineNormal.Y;
+	HypotenuseProjection.X = ProjectionConstant * Line.X;
+	HypotenuseProjection.Y = ProjectionConstant * Line.Y;
 
-	float HypotenuseProjectionLengthSquared = HypotenuseProjection.X * HypotenuseProjection.X +
-		HypotenuseProjection.Y * HypotenuseProjection.Y;
-
-	if(HypotenuseProjectionLengthSquared < R3 * R3)
-	{
-		float HypotenuseProjectionLength = sqrt(HypotenuseProjectionLengthSquared);
-		float CollisionOffsetLength = R3 - HypotenuseProjectionLength;
-
-		CollisionVector->X = CollisionOffsetLength * (HypotenuseProjection.X / HypotenuseProjectionLength);
-		CollisionVector->Y = CollisionOffsetLength * (HypotenuseProjection.Y / HypotenuseProjectionLength);
-
-		return true;
-	}
-
-	return false;
+	return FillCollisionVectorCircleToCircle(
+		CollisionVector,
+		HypotenuseProjection.X, HypotenuseProjection.Y, 1,
+		X3, Y3, R3
+	);
 }
 
 internal bool
@@ -394,9 +387,9 @@ MovePlayer(hero *Hero, input_state *Input)
 
 	Hero->Position.X += 100 * InputMovement.X * GlobalDt;
 	Hero->Position.Y += 100 * InputMovement.Y * GlobalDt;
-	
+
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
-	Hero->DirectionFacing = atan2(InputMovement.Y, InputMovement.X) * 180 / 3.14;
+		Hero->DirectionFacing = atan2(InputMovement.Y, InputMovement.X) * 180 / 3.14;
 }
 
 // Note(sigmasleep): This should not have any calls to SDL in it
@@ -410,11 +403,18 @@ RenderGame(input_state *Input, scene *Scene)
 		CollideWithBaddie(&Scene->Hero, &Scene->Baddies[BaddieIndex]);
 	}
 
+	vector RandomPoint1;
+	vector RandomPoint2;
+	RandomPoint1.X = 0;
+	RandomPoint1.Y = 0;
+	RandomPoint2.X = 100;
+	RandomPoint2.Y = SCREEN_HEIGHT / 2;
+
 	vector CollisionVector;
 
 	if(FillCollisionVectorLineToCircle(
 		&CollisionVector,
-		0, SCREEN_HEIGHT, 0, 0,
+		RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y,
 		Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius
 	))
 	{
@@ -423,6 +423,10 @@ RenderGame(input_state *Input, scene *Scene)
 	}
 
 	RenderScene(Scene);
+
+	SDL_RenderDrawLine(GlobalRenderer,
+					   RandomPoint1.X, RandomPoint1.Y,
+					   RandomPoint2.X, RandomPoint2.Y);
 }
 
 int
@@ -434,10 +438,10 @@ main(int argc, char* args[])
 	}
 
 	GlobalWindow = SDL_CreateWindow("SDL Test",
-							  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-							  SCREEN_WIDTH, SCREEN_HEIGHT,
-							  0);
-	
+									SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+									SCREEN_WIDTH, SCREEN_HEIGHT,
+									0);
+
 	GlobalRenderer = SDL_CreateRenderer(GlobalWindow, -1, 0);
 
 	SDL_Event e;
@@ -466,9 +470,9 @@ main(int argc, char* args[])
 
 	SDL_GameController *Controller1 = SDL_GameControllerOpen(0);
 	while(GlobalRunning) {
-		GlobalDt = (SDL_GetTicks() - lastTime)/1000.f;
+		GlobalDt = (SDL_GetTicks() - lastTime) / 1000.f;
 		lastTime = SDL_GetTicks();
-		
+
 		while(SDL_PollEvent(&e) != 0)
 		{
 			switch(e.type)
@@ -521,26 +525,26 @@ main(int argc, char* args[])
 						controller_state* Controller = &Input.Controllers[Event.which];
 						switch(Event.button)
 						{
-						case SDL_CONTROLLER_BUTTON_DPAD_UP:
-						{
-							Controller->Up.IsDownLastState = Controller->Up.IsDown;
-							Controller->Up.IsDown = IsDown;
-						} break;
-						case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-						{
-							Controller->Down.IsDownLastState = Controller->Down.IsDown;
-							Controller->Down.IsDown = IsDown;
-						} break;
-						case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-						{
-							Controller->Left.IsDownLastState = Controller->Left.IsDown;
-							Controller->Left.IsDown = IsDown;
-						} break;
-						case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-						{
-							Controller->Right.IsDownLastState = Controller->Right.IsDown;
-							Controller->Right.IsDown = IsDown;
-						} break;
+							case SDL_CONTROLLER_BUTTON_DPAD_UP:
+							{
+								Controller->Up.IsDownLastState = Controller->Up.IsDown;
+								Controller->Up.IsDown = IsDown;
+							} break;
+							case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+							{
+								Controller->Down.IsDownLastState = Controller->Down.IsDown;
+								Controller->Down.IsDown = IsDown;
+							} break;
+							case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+							{
+								Controller->Left.IsDownLastState = Controller->Left.IsDown;
+								Controller->Left.IsDown = IsDown;
+							} break;
+							case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+							{
+								Controller->Right.IsDownLastState = Controller->Right.IsDown;
+								Controller->Right.IsDown = IsDown;
+							} break;
 						}
 					}
 				} break;
@@ -548,7 +552,7 @@ main(int argc, char* args[])
 		}
 
 		RenderGame(&Input, &Scene);
-		
+
 		SDL_RenderPresent(GlobalRenderer);
 
 		SDL_Delay(1);
