@@ -203,6 +203,8 @@ RenderBaddie(baddie *Baddie)
 				   Baddie->Radius,
 				   16, 32,
 				   Baddie->Angle + 180);
+	DrawBox(Baddie->Position.X - Baddie->Radius, Baddie->Position.Y - Baddie->Radius,
+			Baddie->Radius*2, Baddie->Radius*2);
 }
 
 internal void
@@ -225,18 +227,15 @@ RenderScene(scene *Scene)
 	SDL_SetRenderDrawColor(GlobalRenderer, 0, 255, 0, 255);
 	SDL_RenderFillRect(GlobalRenderer, &fillRect);
 
-	SDL_SetRenderDrawColor(GlobalRenderer, 255, 255, 255, 255);
-
 	SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
-
 	RunOnBaddiesInScene(Scene, RenderBaddie);
 
 	DrawTriangle(Scene->Hero.Position.X, Scene->Hero.Position.Y,
 				 Scene->Hero.DirectionFacing,
 				 Scene->Hero.HalfHeight);
 	DrawCircle(Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius, 32);
-//	DrawBox(Scene->Hero.Position.x - Scene->Hero.HalfHeight, Scene->Hero.Position.y - Scene->Hero.HalfHeight,
-//			Scene->Hero.HalfHeight * 2, Scene->Hero.HalfHeight * 2);
+	//DrawBox(Scene->Hero.Position.X - Scene->Hero.Radius, Scene->Hero.Position.Y - Scene->Hero.Radius,
+	//		Scene->Hero.Radius*2, Scene->Hero.Radius*2);
 }
 
 internal bool
@@ -267,23 +266,60 @@ FillCollisionVectorCircleToCircle(
 	return false;
 }
 
+internal bool
+FillCollisionVectorLineToCircle(
+	vector *CollisionVector,
+	float X1, float Y1, float X2, float Y2,
+	float X3, float Y3, float R3
+)
+{
+	vector Hypotenuse;
+	Hypotenuse.X = X3 - X1;
+	Hypotenuse.Y = Y3 - Y1;
+
+	vector LineNormal;
+	LineNormal.X = -1 * (Y2 - Y1);
+	LineNormal.Y = X2 - X1;
+
+	float DotProduct = Hypotenuse.X * LineNormal.X + Hypotenuse.Y * LineNormal.Y;
+
+	float LineNormalLengthSquared = LineNormal.X * LineNormal.X + LineNormal.Y * LineNormal.Y;
+	float ProjectionConstant = (DotProduct / LineNormalLengthSquared);
+
+	vector HypotenuseProjection;
+	HypotenuseProjection.X = ProjectionConstant * LineNormal.X;
+	HypotenuseProjection.Y = ProjectionConstant * LineNormal.Y;
+
+	float HypotenuseProjectionLengthSquared = HypotenuseProjection.X * HypotenuseProjection.X +
+		HypotenuseProjection.Y * HypotenuseProjection.Y;
+
+	if(HypotenuseProjectionLengthSquared < R3 * R3)
+	{
+		float HypotenuseProjectionLength = sqrt(HypotenuseProjectionLengthSquared);
+		float CollisionOffsetLength = R3 - HypotenuseProjectionLength;
+
+		CollisionVector->X = CollisionOffsetLength * (HypotenuseProjection.X / HypotenuseProjectionLength);
+		CollisionVector->Y = CollisionOffsetLength * (HypotenuseProjection.Y / HypotenuseProjectionLength);
+
+		return true;
+	}
+
+	return false;
+}
+
+internal bool
+FillCollisionVectorLineToLine(
+	vector *CollisionVector,
+	float X1, float Y1, float X2, float Y2,
+	float X3, float Y3, float X4, float Y4
+)
+{
+	return false;
+}
+
 internal void
 CollideWithBaddie(hero *Hero, baddie *Baddie)
 {
-	/*float Distance = GetDistanceBetweenPoints(
-		Hero->Position.x, Hero->Position.y,
-		Baddie->Position.x, Baddie->Position.y
-	);
-
-	if(Distance < Hero->Radius + Baddie->Radius)
-	{
-		float PushDistance = Baddie->Radius - (Distance - Hero->Radius);
-		float Direction = GetAngleBetweenPoints(
-			Hero->Position.x, Hero->Position.y,
-			Baddie->Position.x, Baddie->Position.y);
-		Baddie->Position.x += cos(Direction * 3.14 / 180.f) * PushDistance;
-		Baddie->Position.y += sin(Direction * 3.14 / 180.f) * PushDistance;
-	}*/
 	vector CollisionVector;
 
 	if(FillCollisionVectorCircleToCircle(&CollisionVector,
@@ -293,7 +329,6 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 		Baddie->Position.X += CollisionVector.X;
 		Baddie->Position.Y += CollisionVector.Y;
 	}
-	
 
 	float X = Hero->Position.X + cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
 	float Y = Hero->Position.Y + sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
@@ -373,6 +408,18 @@ RenderGame(input_state *Input, scene *Scene)
 	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
 	{
 		CollideWithBaddie(&Scene->Hero, &Scene->Baddies[BaddieIndex]);
+	}
+
+	vector CollisionVector;
+
+	if(FillCollisionVectorLineToCircle(
+		&CollisionVector,
+		0, SCREEN_HEIGHT, 0, 0,
+		Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius
+	))
+	{
+		Scene->Hero.Position.X += CollisionVector.X;
+		Scene->Hero.Position.Y += CollisionVector.Y;
 	}
 
 	RenderScene(Scene);
