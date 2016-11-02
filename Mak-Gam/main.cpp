@@ -293,7 +293,8 @@ FillCollisionVectorLineToCircle(
 	HypotenuseProjection.X = ProjectionConstant * Line.X;
 	HypotenuseProjection.Y = ProjectionConstant * Line.Y;
 
-		char output[255];
+		
+	/*char output[255];
 	snprintf(output, 255, "Line: %f %f\n",
 			 Line.X, Line.Y);
 	OutputDebugStringA(output);
@@ -308,11 +309,11 @@ FillCollisionVectorLineToCircle(
 	OutputDebugStringA(output);
 	snprintf(output, 255, "HypotenuseProjection: %f %f\n",
 			 HypotenuseProjection.X, HypotenuseProjection.Y);
-	OutputDebugStringA(output);
+	OutputDebugStringA(output);*/
 
 	return FillCollisionVectorCircleToCircle(
 		CollisionVector,
-		HypotenuseProjection.X, HypotenuseProjection.Y, 1,
+		HypotenuseProjection.X, HypotenuseProjection.Y, 0,
 		Hypotenuse.X, Hypotenuse.Y, R3
 	);
 }
@@ -425,7 +426,7 @@ RenderGame(input_state *Input, scene *Scene)
 	RandomPoint1.X = 100;
 	RandomPoint1.Y = 200;
 	RandomPoint2.X = 300;
-	RandomPoint2.Y = 400;
+	RandomPoint2.Y = 100;
 
 	vector CollisionVector;
 
