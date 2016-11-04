@@ -510,8 +510,10 @@ main(int argc, char* args[])
 					float Deadzone = 0.2f;
 					Value = ABS(Value) > Deadzone ? Value : 0;
 
+					// Todo(sigmasleep): Replace magic number with controllercount variable
 					if(Event.which < 4)
 					{
+						// Todo(sigmasleep): Add timing
 						controller_state* Controller = &Input.Controllers[Event.which];
 
 						switch(Event.axis)
@@ -538,8 +540,11 @@ main(int argc, char* args[])
 
 					bool IsDown = Event.state == SDL_PRESSED;
 
+
+					// Todo(sigmasleep): Replace magic number with controllercount variable
 					if(Event.which < 4)
 					{
+						// Todo(sigmasleep): Add timing
 						controller_state* Controller = &Input.Controllers[Event.which];
 						switch(Event.button)
 						{
@@ -564,6 +569,40 @@ main(int argc, char* args[])
 								Controller->Right.IsDown = IsDown;
 							} break;
 						}
+					}
+				} break;
+				case SDL_KEYDOWN:
+				case SDL_KEYUP:
+				{
+					SDL_KeyboardEvent Event = e.key;
+
+					bool IsDown = Event.state == SDL_PRESSED;
+					
+					// Todo(sigmasleep): Add a way to change which player the keyboard controls
+					// Todo(sigmasleep): Add timing
+					controller_state* Controller = &Input.Controllers[0];
+					switch(Event.keysym.scancode)
+					{
+						case SDL_SCANCODE_UP:
+						{
+							Controller->Up.IsDownLastState = Controller->Up.IsDown;
+							Controller->Up.IsDown = IsDown;
+						} break;
+						case SDL_SCANCODE_DOWN:
+						{
+							Controller->Down.IsDownLastState = Controller->Down.IsDown;
+							Controller->Down.IsDown = IsDown;
+						} break;
+						case SDL_SCANCODE_LEFT:
+						{
+							Controller->Left.IsDownLastState = Controller->Left.IsDown;
+							Controller->Left.IsDown = IsDown;
+						} break;
+						case SDL_SCANCODE_RIGHT:
+						{
+							Controller->Right.IsDownLastState = Controller->Right.IsDown;
+							Controller->Right.IsDown = IsDown;
+						} break;
 					}
 				} break;
 			}
