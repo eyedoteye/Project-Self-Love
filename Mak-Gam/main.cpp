@@ -11,9 +11,14 @@
 
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 270
+#define CONTROLLER_MAX 4
+
+#define SQRT2	1.41421356237f
+#define PI		3.14159265359f
+#define DEG2RAD_CONSTANT	PI / 180.f
+#define RAD2DEG_CONSTANT	180.f / PI
 
 #define CLIP(X, A, B) ((X < A) ? A : ((X > B) ? B : X))
-#define SQRT2 1.41421356237f
 #define ABS(X) (X < 0 ? -X : X)
 
 global_variable bool GlobalRunning = true;
@@ -43,7 +48,7 @@ GetAngleBetweenPoints(float X1, float Y1, float X2, float Y2)
 	float Y = Y2 - Y1;
 	float X = X2 - X1;
 
-	return atan2f(Y, X) * 180 / 3.14f;
+	return atan2f(Y, X) * RAD2DEG_CONSTANT;
 }
 
 struct button_state
@@ -127,16 +132,16 @@ internal void
 DrawTriangle(int X, int Y, float Angle, int HalfHeight)
 {
 	SDL_Point Points[4];
-	Points[0].x = (int)(X + cos(Angle * 3.14 / 180.f) * HalfHeight);
-	Points[0].y = (int)(Y + sin(Angle * 3.14 / 180.f) * HalfHeight);
+	Points[0].x = (int)(X + cos(Angle * DEG2RAD_CONSTANT) * HalfHeight);
+	Points[0].y = (int)(Y + sin(Angle * DEG2RAD_CONSTANT) * HalfHeight);
 	Points[3].x = Points[0].x;
 	Points[3].y = Points[0].y;
 
-	Points[1].x = (int)(X + cos((Angle + 120) * 3.14 / 180.f) * HalfHeight);
-	Points[1].y = (int)(Y + sin((Angle + 120) * 3.14 / 180.f) * HalfHeight);
+	Points[1].x = (int)(X + cos((Angle + 120) * DEG2RAD_CONSTANT) * HalfHeight);
+	Points[1].y = (int)(Y + sin((Angle + 120) * DEG2RAD_CONSTANT) * HalfHeight);
 
-	Points[2].x = (int)(X + cos((Angle - 120) * 3.14 / 180.f) * HalfHeight);
-	Points[2].y = (int)(Y + sin((Angle - 120) * 3.14 / 180.f) * HalfHeight);
+	Points[2].x = (int)(X + cos((Angle - 120) * DEG2RAD_CONSTANT) * HalfHeight);
+	Points[2].y = (int)(Y + sin((Angle - 120) * DEG2RAD_CONSTANT) * HalfHeight);
 
 	SDL_RenderDrawLines(GlobalRenderer, Points, 4);
 }
@@ -149,7 +154,7 @@ DrawSemiCircle(
 	float Segments, float TotalSegments,
 	float Angle)
 {
-	float RadAngle = Angle * 3.14f / 180;
+	float RadAngle = Angle * DEG2RAD_CONSTANT;
 
 	vector Position1;
 	vector Position2;
@@ -158,8 +163,8 @@ DrawSemiCircle(
 
 	for(int PointNum = 0; PointNum < Segments; PointNum++)
 	{
-		Position2.X = X + cosf(RadAngle + PointNum / TotalSegments * 3.14f * 2) * Radius;
-		Position2.Y = Y + sinf(RadAngle + PointNum / TotalSegments * 3.14f * 2) * Radius;
+		Position2.X = X + cosf(RadAngle + PointNum / TotalSegments * PI * 2) * Radius;
+		Position2.Y = Y + sinf(RadAngle + PointNum / TotalSegments * PI * 2) * Radius;
 		SDL_RenderDrawLine(GlobalRenderer,
 						   (int)Position1.X, (int)Position1.Y,
 						   (int)Position2.X, (int)Position2.Y);
@@ -341,8 +346,8 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 		Baddie->Position.Y += CollisionVector.Y;
 	}
 
-	float X = Hero->Position.X + cosf(Hero->DirectionFacing * 3.14f / 180.f) * Hero->HalfHeight;
-	float Y = Hero->Position.Y + sinf(Hero->DirectionFacing * 3.14f / 180.f) * Hero->HalfHeight;
+	float X = Hero->Position.X + cosf(Hero->DirectionFacing * DEG2RAD_CONSTANT) * Hero->HalfHeight;
+	float Y = Hero->Position.Y + sinf(Hero->DirectionFacing * DEG2RAD_CONSTANT) * Hero->HalfHeight;
 
 	float Distance = GetDistanceBetweenPoints(
 		X, Y,
@@ -407,7 +412,7 @@ MovePlayer(hero *Hero, input_state *Input)
 	Hero->Position.Y += 100 * InputMovement.Y * GlobalDt;
 
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
-		Hero->DirectionFacing = atan2f(InputMovement.Y, InputMovement.X) * 180 / 3.14f;
+		Hero->DirectionFacing = atan2f(InputMovement.Y, InputMovement.X) * RAD2DEG_CONSTANT;
 }
 
 // Note(sigmasleep): This should not have any calls to SDL in it
@@ -482,7 +487,7 @@ main(int argc, char* args[])
 	Scene.Hero.DirectionFacing = 0;
 	Scene.Hero.CurrentPathIndex = 0;
 	Scene.Hero.Radius = 7;
-	Scene.Hero.HalfHeight = acosf(30 * 3.14f / 180) * Scene.Hero.Radius * 2;
+	Scene.Hero.HalfHeight = acosf(30 * DEG2RAD_CONSTANT) * Scene.Hero.Radius * 2;
 
 	input_state Input = {};
 
@@ -510,8 +515,7 @@ main(int argc, char* args[])
 					float Deadzone = 0.2f;
 					Value = ABS(Value) > Deadzone ? Value : 0;
 
-					// Todo(sigmasleep): Replace magic number with controllercount variable
-					if(Event.which < 4)
+					if(Event.which < CONTROLLER_MAX)
 					{
 						// Todo(sigmasleep): Add timing
 						controller_state* Controller = &Input.Controllers[Event.which];
