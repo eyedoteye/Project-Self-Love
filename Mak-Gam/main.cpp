@@ -34,7 +34,7 @@ GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)
 {
 	float X = X2 - X1;
 	float Y = Y2 - Y1;
-	return (float)sqrt(X * X + Y * Y);
+	return sqrtf(X * X + Y * Y);
 }
 
 internal float
@@ -43,7 +43,7 @@ GetAngleBetweenPoints(float X1, float Y1, float X2, float Y2)
 	float Y = Y2 - Y1;
 	float X = X2 - X1;
 
-	return (float)(atan2(Y, X) * 180 / 3.14);
+	return atan2f(Y, X) * 180 / 3.14f;
 }
 
 struct button_state
@@ -119,8 +119,8 @@ BaddieMovement(baddie *Baddie)
 {
 	float Distance = 10 * GlobalDt;
 
-	Baddie->Position.X += (float)cos(Baddie->Position.Y / 10) * Distance;
-	Baddie->Position.Y += (float)sin(Baddie->Position.X / 10) * Distance;
+	Baddie->Position.X += cosf(Baddie->Position.Y / 10) * Distance;
+	Baddie->Position.Y += sinf(Baddie->Position.X / 10) * Distance;
 }
 
 internal void
@@ -153,13 +153,13 @@ DrawSemiCircle(
 
 	vector Position1;
 	vector Position2;
-	Position1.X = X + (float)cos(RadAngle) * Radius;
-	Position1.Y = Y + (float)sin(RadAngle) * Radius;
+	Position1.X = X + cosf(RadAngle) * Radius;
+	Position1.Y = Y + sinf(RadAngle) * Radius;
 
 	for(int PointNum = 0; PointNum < Segments; PointNum++)
 	{
-		Position2.X = X + (float)cos(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
-		Position2.Y = Y + (float)sin(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
+		Position2.X = X + cosf(RadAngle + PointNum / TotalSegments * 3.14f * 2) * Radius;
+		Position2.Y = Y + sinf(RadAngle + PointNum / TotalSegments * 3.14f * 2) * Radius;
 		SDL_RenderDrawLine(GlobalRenderer,
 						   (int)Position1.X, (int)Position1.Y,
 						   (int)Position2.X, (int)Position2.Y);
@@ -167,8 +167,8 @@ DrawSemiCircle(
 		Position1.Y = Position2.Y;
 	}
 
-	Position2.X = X + (float)cos(RadAngle) * Radius;
-	Position2.Y = Y + (float)sin(RadAngle) * Radius;
+	Position2.X = X + cosf(RadAngle) * Radius;
+	Position2.Y = Y + sinf(RadAngle) * Radius;
 	SDL_RenderDrawLine(GlobalRenderer,
 					   (int)Position1.X, (int)Position1.Y,
 					   (int)Position2.X, (int)Position2.Y);
@@ -253,7 +253,7 @@ FillCollisionVectorCircleToCircle(
 
 	if(DistanceSquared < RTotal * RTotal)
 	{
-		float Distance = (float)sqrt(DistanceSquared);
+		float Distance = sqrtf(DistanceSquared);
 		float UnitXDistance = XDistance / Distance;
 		float UnitYDistance = YDistance / Distance;
 		float CollisionDistance = RTotal - Distance;
@@ -341,8 +341,8 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 		Baddie->Position.Y += CollisionVector.Y;
 	}
 
-	float X = Hero->Position.X + (float)cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
-	float Y = Hero->Position.Y + (float)sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	float X = Hero->Position.X + cosf(Hero->DirectionFacing * 3.14f / 180.f) * Hero->HalfHeight;
+	float Y = Hero->Position.Y + sinf(Hero->DirectionFacing * 3.14f / 180.f) * Hero->HalfHeight;
 
 	float Distance = GetDistanceBetweenPoints(
 		X, Y,
@@ -407,7 +407,7 @@ MovePlayer(hero *Hero, input_state *Input)
 	Hero->Position.Y += 100 * InputMovement.Y * GlobalDt;
 
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
-		Hero->DirectionFacing = (float)atan2(InputMovement.Y, InputMovement.X) * 180 / 3.14f;
+		Hero->DirectionFacing = atan2f(InputMovement.Y, InputMovement.X) * 180 / 3.14f;
 }
 
 // Note(sigmasleep): This should not have any calls to SDL in it
@@ -482,7 +482,7 @@ main(int argc, char* args[])
 	Scene.Hero.DirectionFacing = 0;
 	Scene.Hero.CurrentPathIndex = 0;
 	Scene.Hero.Radius = 7;
-	Scene.Hero.HalfHeight = (float)acos(30 * 3.14 / 180) * Scene.Hero.Radius * 2;
+	Scene.Hero.HalfHeight = acosf(30 * 3.14f / 180) * Scene.Hero.Radius * 2;
 
 	input_state Input = {};
 
