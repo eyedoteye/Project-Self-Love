@@ -13,7 +13,7 @@
 #define SCREEN_HEIGHT 270
 
 #define CLIP(X, A, B) ((X < A) ? A : ((X > B) ? B : X))
-#define SQRT2 1.41421356237
+#define SQRT2 1.41421356237f
 #define ABS(X) (X < 0 ? -X : X)
 
 global_variable bool GlobalRunning = true;
@@ -34,7 +34,7 @@ GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)
 {
 	float X = X2 - X1;
 	float Y = Y2 - Y1;
-	return sqrt(X * X + Y * Y);
+	return (float)sqrt(X * X + Y * Y);
 }
 
 internal float
@@ -43,7 +43,7 @@ GetAngleBetweenPoints(float X1, float Y1, float X2, float Y2)
 	float Y = Y2 - Y1;
 	float X = X2 - X1;
 
-	return atan2(Y, X) * 180 / 3.14;
+	return (float)(atan2(Y, X) * 180 / 3.14);
 }
 
 struct button_state
@@ -119,24 +119,24 @@ BaddieMovement(baddie *Baddie)
 {
 	float Distance = 10 * GlobalDt;
 
-	Baddie->Position.X += cos(Baddie->Position.Y / 10) * Distance;
-	Baddie->Position.Y += sin(Baddie->Position.X / 10) * Distance;
+	Baddie->Position.X += (float)cos(Baddie->Position.Y / 10) * Distance;
+	Baddie->Position.Y += (float)sin(Baddie->Position.X / 10) * Distance;
 }
 
 internal void
 DrawTriangle(int X, int Y, float Angle, int HalfHeight)
 {
 	SDL_Point Points[4];
-	Points[0].x = X + cos(Angle * 3.14 / 180.f) * HalfHeight;
-	Points[0].y = Y + sin(Angle * 3.14 / 180.f) * HalfHeight;
+	Points[0].x = (int)(X + cos(Angle * 3.14 / 180.f) * HalfHeight);
+	Points[0].y = (int)(Y + sin(Angle * 3.14 / 180.f) * HalfHeight);
 	Points[3].x = Points[0].x;
 	Points[3].y = Points[0].y;
 
-	Points[1].x = X + cos((Angle + 120) * 3.14 / 180.f) * HalfHeight;
-	Points[1].y = Y + sin((Angle + 120) * 3.14 / 180.f) * HalfHeight;
+	Points[1].x = (int)(X + cos((Angle + 120) * 3.14 / 180.f) * HalfHeight);
+	Points[1].y = (int)(Y + sin((Angle + 120) * 3.14 / 180.f) * HalfHeight);
 
-	Points[2].x = X + cos((Angle - 120) * 3.14 / 180.f) * HalfHeight;
-	Points[2].y = Y + sin((Angle - 120) * 3.14 / 180.f) * HalfHeight;
+	Points[2].x = (int)(X + cos((Angle - 120) * 3.14 / 180.f) * HalfHeight);
+	Points[2].y = (int)(Y + sin((Angle - 120) * 3.14 / 180.f) * HalfHeight);
 
 	SDL_RenderDrawLines(GlobalRenderer, Points, 4);
 }
@@ -149,29 +149,29 @@ DrawSemiCircle(
 	float Segments, float TotalSegments,
 	float Angle)
 {
-	float RadAngle = Angle * 3.14 / 180;
+	float RadAngle = Angle * 3.14f / 180;
 
 	vector Position1;
 	vector Position2;
-	Position1.X = X + cos(RadAngle) * Radius;
-	Position1.Y = Y + sin(RadAngle) * Radius;
+	Position1.X = X + (float)cos(RadAngle) * Radius;
+	Position1.Y = Y + (float)sin(RadAngle) * Radius;
 
 	for(int PointNum = 0; PointNum < Segments; PointNum++)
 	{
-		Position2.X = X + cos(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
-		Position2.Y = Y + sin(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
+		Position2.X = X + (float)cos(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
+		Position2.Y = Y + (float)sin(RadAngle + PointNum / TotalSegments * 3.14 * 2) * Radius;
 		SDL_RenderDrawLine(GlobalRenderer,
-						   Position1.X, Position1.Y,
-						   Position2.X, Position2.Y);
+						   (int)Position1.X, (int)Position1.Y,
+						   (int)Position2.X, (int)Position2.Y);
 		Position1.X = Position2.X;
 		Position1.Y = Position2.Y;
 	}
 
-	Position2.X = X + cos(RadAngle) * Radius;
-	Position2.Y = Y + sin(RadAngle) * Radius;
+	Position2.X = X + (float)cos(RadAngle) * Radius;
+	Position2.Y = Y + (float)sin(RadAngle) * Radius;
 	SDL_RenderDrawLine(GlobalRenderer,
-					   Position1.X, Position1.Y,
-					   Position2.X, Position2.Y);
+					   (int)Position1.X, (int)Position1.Y,
+					   (int)Position2.X, (int)Position2.Y);
 }
 
 internal void
@@ -230,9 +230,9 @@ RenderScene(scene *Scene)
 	SDL_SetRenderDrawColor(GlobalRenderer, 0, 0, 255, 255);
 	RunOnBaddiesInScene(Scene, RenderBaddie);
 
-	DrawTriangle(Scene->Hero.Position.X, Scene->Hero.Position.Y,
+	DrawTriangle((int)Scene->Hero.Position.X, (int)Scene->Hero.Position.Y,
 				 Scene->Hero.DirectionFacing,
-				 Scene->Hero.HalfHeight);
+				 (int)Scene->Hero.HalfHeight);
 	DrawCircle(Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius, 32);
 	//DrawBox(Scene->Hero.Position.X - Scene->Hero.Radius, Scene->Hero.Position.Y - Scene->Hero.Radius,
 	//		Scene->Hero.Radius*2, Scene->Hero.Radius*2);
@@ -253,7 +253,7 @@ FillCollisionVectorCircleToCircle(
 
 	if(DistanceSquared < RTotal * RTotal)
 	{
-		float Distance = sqrt(DistanceSquared);
+		float Distance = (float)sqrt(DistanceSquared);
 		float UnitXDistance = XDistance / Distance;
 		float UnitYDistance = YDistance / Distance;
 		float CollisionDistance = RTotal - Distance;
@@ -318,7 +318,7 @@ FillCollisionVectorLineToCircle(
 	);
 }
 
-internal bool
+/*internal bool
 FillCollisionVectorLineToLine(
 	vector *CollisionVector,
 	float X1, float Y1, float X2, float Y2,
@@ -326,7 +326,7 @@ FillCollisionVectorLineToLine(
 )
 {
 	return false;
-}
+}*/
 
 internal void
 CollideWithBaddie(hero *Hero, baddie *Baddie)
@@ -341,8 +341,8 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 		Baddie->Position.Y += CollisionVector.Y;
 	}
 
-	float X = Hero->Position.X + cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
-	float Y = Hero->Position.Y + sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	float X = Hero->Position.X + (float)cos(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
+	float Y = Hero->Position.Y + (float)sin(Hero->DirectionFacing * 3.14 / 180.f) * Hero->HalfHeight;
 
 	float Distance = GetDistanceBetweenPoints(
 		X, Y,
@@ -407,7 +407,7 @@ MovePlayer(hero *Hero, input_state *Input)
 	Hero->Position.Y += 100 * InputMovement.Y * GlobalDt;
 
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
-		Hero->DirectionFacing = atan2(InputMovement.Y, InputMovement.X) * 180 / 3.14;
+		Hero->DirectionFacing = (float)atan2(InputMovement.Y, InputMovement.X) * 180 / 3.14f;
 }
 
 // Note(sigmasleep): This should not have any calls to SDL in it
@@ -443,8 +443,8 @@ RenderGame(input_state *Input, scene *Scene)
 	RenderScene(Scene);
 
 	SDL_RenderDrawLine(GlobalRenderer,
-					   RandomPoint1.X, RandomPoint1.Y,
-					   RandomPoint2.X, RandomPoint2.Y);
+					   (int)RandomPoint1.X, (int)RandomPoint1.Y,
+					   (int)RandomPoint2.X, (int)RandomPoint2.Y);
 }
 
 int
@@ -482,7 +482,7 @@ main(int argc, char* args[])
 	Scene.Hero.DirectionFacing = 0;
 	Scene.Hero.CurrentPathIndex = 0;
 	Scene.Hero.Radius = 7;
-	Scene.Hero.HalfHeight = acos(30 * 3.14 / 180) * Scene.Hero.Radius * 2;
+	Scene.Hero.HalfHeight = (float)acos(30 * 3.14 / 180) * Scene.Hero.Radius * 2;
 
 	input_state Input = {};
 
@@ -507,7 +507,7 @@ main(int argc, char* args[])
 					float Value = Event.value < 0 ? Event.value / 32768.f : Event.value / 32767.f;
 
 					// Todo(sigmasleep): Move deadzone to a better place
-					float Deadzone = 0.2;
+					float Deadzone = 0.2f;
 					Value = ABS(Value) > Deadzone ? Value : 0;
 
 					if(Event.which < 4)
