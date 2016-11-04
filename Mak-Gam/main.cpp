@@ -388,17 +388,22 @@ ProcessControllerMovement(controller_state *Controller, vector *Movement)
 		Y += 1;
 	}
 
-	if(X != 0 && Y != 0)
-	{
-		X /= SQRT2;
-		Y /= SQRT2;
-	}
-
 	X += Controller->X;
 	Y += Controller->Y;
 
-	Movement->X = CLIP(X, -1.f, 1.f);
-	Movement->Y = CLIP(Y, -1.f, 1.f);
+	X = CLIP(X, -1.f, 1.f);
+	Y = CLIP(Y, -1.f, 1.f);
+
+	float MagnitudeSquared = X * X + Y * Y;
+	if(MagnitudeSquared > 1)
+	{
+		float Magnitude = sqrtf(MagnitudeSquared);
+		X = X / Magnitude;
+		Y = Y / Magnitude;
+	}
+
+	Movement->X = X;
+	Movement->Y = Y;
 }
 
 internal void
@@ -544,9 +549,8 @@ main(int argc, char* args[])
 
 					bool IsDown = Event.state == SDL_PRESSED;
 
-
 					// Todo(sigmasleep): Replace magic number with controllercount variable
-					if(Event.which < 4)
+					if(Event.which < CONTROLLER_MAX)
 					{
 						// Todo(sigmasleep): Add timing
 						controller_state* Controller = &Input.Controllers[Event.which];
