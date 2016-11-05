@@ -166,12 +166,10 @@ main(int argc, char* args[])
 				{
 					SDL_ControllerAxisEvent Event = e.caxis;
 
+					// Note(sigmasleep): Deadzone value from mdsn for XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE
 					// Note(sigmasleep): Normalization via division by int16 min/max values
-					float Value = Event.value < 0 ? Event.value / 32768.f : Event.value / 32767.f;
-
-					// Todo(sigmasleep): Move deadzone to a better place
-					float Deadzone = 0.2f;
-					Value = ABS(Value) > Deadzone ? Value : 0;
+					float Value = ABS(Event.value) < 7849 ? 0 : 
+						(Event.value < 0 ? Event.value / 32768.f : Event.value / 32767.f);
 
 					if(Event.which < CONTROLLER_MAX)
 					{
