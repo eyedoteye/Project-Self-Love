@@ -168,7 +168,7 @@ main(int argc, char* args[])
 
 					// Note(sigmasleep): Deadzone value from mdsn for XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE
 					// Note(sigmasleep): Normalization via division by int16 min/max values
-					float Value = ABS(Event.value) < 7849 ? 0 : 
+					float Value = ABS(Event.value) < 7849 ? 0.f : 
 						(Event.value < 0 ? Event.value / 32768.f : Event.value / 32767.f);
 
 					if(Event.which < CONTROLLER_MAX)
@@ -180,15 +180,29 @@ main(int argc, char* args[])
 						{
 							case SDL_CONTROLLER_AXIS_LEFTX:
 							{
-								Controller->XLastState = Controller->X;
+								if(Controller->X != Value)
+								{
+									Controller->XLastState = Controller->X;
 
-								Controller->X = Value;
+									Controller->X = Value;
+									char output[255];
+									snprintf(output, 255, "LeftX: %f\n",
+											 Value);
+									OutputDebugStringA(output);
+								}
 							} break;
 							case SDL_CONTROLLER_AXIS_LEFTY:
 							{
-								Controller->YLastState = Controller->Y;
+								if(Controller->Y != Value)
+								{
+									Controller->YLastState = Controller->Y;
 
-								Controller->Y = Value;
+									Controller->Y = Value;
+									char output[255];
+									snprintf(output, 255, "LeftY: %f\n",
+											 Value);
+									OutputDebugStringA(output);
+								}
 							} break;
 						}
 					}
