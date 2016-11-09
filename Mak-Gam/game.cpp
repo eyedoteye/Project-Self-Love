@@ -227,9 +227,8 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 		Hero->DirectionFacing = atan2f(InputMovement.Y, InputMovement.X) * RAD2DEG_CONSTANT;
 }
 
-// Note(sigmasleep): This should not have any calls to SDL in it
-internal void
-RenderGame(input_state *Input, scene *Scene, float Dt)
+extern "C"
+UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 {
 	MovePlayer(&Scene->Hero, Input, Dt);
 	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
@@ -281,4 +280,28 @@ RenderGame(input_state *Input, scene *Scene, float Dt)
 				 Scene->Hero.HalfHeight);
 	DrawCircle(Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius, 32);
 	DrawLine(RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y);
+}
+
+extern "C"
+LOAD_GAME(LoadGame)
+{
+  baddie Baddie = {};
+
+  Baddie.Position.X = SCREEN_WIDTH / 2;
+  Baddie.Position.Y = SCREEN_HEIGHT / 2;
+  Baddie.Radius = 14;
+
+  scene ClearedScene = {};
+  *Scene = ClearedScene;
+
+  AddBaddieToScene(&Baddie, Scene);
+  Baddie.Position.X += SCREEN_WIDTH / 4;
+  AddBaddieToScene(&Baddie, Scene);
+
+  Scene->Hero.Position.X = SCREEN_WIDTH / 4;
+  Scene->Hero.Position.Y = SCREEN_HEIGHT / 4;
+  Scene->Hero.DirectionFacing = 0;
+  Scene->Hero.CurrentPathIndex = 0;
+  Scene->Hero.Radius = 7;
+  Scene->Hero.HalfHeight = acosf(30 * DEG2RAD_CONSTANT) * Scene->Hero.Radius * 2;
 }

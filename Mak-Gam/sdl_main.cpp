@@ -7,7 +7,6 @@
 #define local_persist static
 
 #include "game.h"
-#include "game.cpp"
 
 #include <windows.h>
 #include <stdio.h>
@@ -17,30 +16,7 @@ global_variable SDL_Renderer *GlobalRenderer;
 global_variable bool GlobalRunning = true;
 global_variable SDL_Window *GlobalWindow;
 
-// Todo(sigmasleep): Remove from platform code once game has scene loading
-void InitDebugScene(scene *Scene)
-{
-	baddie Baddie = {};
-
-	Baddie.Position.X = SCREEN_WIDTH / 2;
-	Baddie.Position.Y = SCREEN_HEIGHT / 2;
-	Baddie.Radius = 14;
-
-	scene ClearedScene = {};
-	*Scene = ClearedScene;
-
-	AddBaddieToScene(&Baddie, Scene);
-	Baddie.Position.X += SCREEN_WIDTH / 4;
-	AddBaddieToScene(&Baddie, Scene);
-
-	Scene->Hero.Position.X = SCREEN_WIDTH / 4;
-	Scene->Hero.Position.Y = SCREEN_HEIGHT / 4;
-	Scene->Hero.DirectionFacing = 0;
-	Scene->Hero.CurrentPathIndex = 0;
-	Scene->Hero.Radius = 7;
-	Scene->Hero.HalfHeight = acosf(30 * DEG2RAD_CONSTANT) * Scene->Hero.Radius * 2;
-}
-
+// Note(sigmasleep): Should these functions exist in platform layer?
 internal void
 SetColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A)
 {
@@ -123,7 +99,6 @@ FillBox(float X, float Y, float Width, float Height)
 	SDL_RenderFillRect(GlobalRenderer, &FillRect);
 }
 
-
 int
 main(int argc, char* args[])
 {
@@ -145,9 +120,8 @@ main(int argc, char* args[])
 	float Dt;
 	input_state Input = {};
 
-	// Todo(sigmasleep): Remove from platform code once game has scene loading
 	scene Scene;
-	InitDebugScene(&Scene);
+	LoadGame(&Scene);
 
 	uint32_t LastTime = SDL_GetTicks();	
 	while(GlobalRunning) {
@@ -284,7 +258,7 @@ main(int argc, char* args[])
 			}
 		}
 
-		RenderGame(&Input, &Scene, Dt);
+		UpdateAndRenderGame(&Input, &Scene, Dt);
 		SDL_RenderPresent(GlobalRenderer);
 
 		SDL_Delay(1);

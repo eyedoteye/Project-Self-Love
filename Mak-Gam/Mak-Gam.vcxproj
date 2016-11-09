@@ -69,8 +69,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\i.i\Documents\Code\001.run\c\Mak-Gam\SDL2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\i.i\Documents\Code\001.run\c\Mak-Gam\SDL2\x86-lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\sigmasleep\Documents\Code\Mak-Gam\SDL2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\sigmasleep\Documents\Code\Mak-Gam\SDL2\x86-lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -123,6 +123,7 @@
   <ItemGroup>
     <ClCompile Include="game.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="sdl_main.cpp" />
   </ItemGroup>
