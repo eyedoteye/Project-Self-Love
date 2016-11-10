@@ -1,5 +1,4 @@
 #include "game.h"
-
 internal float
 GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)
 {
@@ -38,15 +37,15 @@ BaddieMovement(baddie *Baddie, float Dt)
 internal void
 RenderBaddie(baddie *Baddie)
 {
-	DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
+	GlobalDebugTools->DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
 				   Baddie->Radius,
 				   16, 32,
 				   Baddie->Angle);
-	DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
+	GlobalDebugTools->DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
 				   Baddie->Radius,
 				   16, 32,
 				   Baddie->Angle + 180);
-	DrawBox(Baddie->Position.X - Baddie->Radius, Baddie->Position.Y - Baddie->Radius,
+	GlobalDebugTools->DrawBox(Baddie->Position.X - Baddie->Radius, Baddie->Position.Y - Baddie->Radius,
 			Baddie->Radius * 2, Baddie->Radius * 2);
 }
 
@@ -230,16 +229,16 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 extern "C"
 UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 {
-	MovePlayer(&Scene->Hero, Input, Dt);
-	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
+	MovePlayer(&Memory->Scene->Hero, Memory->Input, Dt);
+	for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
 	{
-		BaddieMovement(&Scene->Baddies[BaddieIndex], Dt);
+		BaddieMovement(&Memory->Scene->Baddies[BaddieIndex], Dt);
 	}
 
 	// Note(sigmasleep): Seperate loops because movement updates should occur before collisions
-	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
+	for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
 	{
-		CollideWithBaddie(&Scene->Hero, &Scene->Baddies[BaddieIndex]);
+		CollideWithBaddie(&Memory->Scene->Hero, &Memory->Scene->Baddies[BaddieIndex]);
 	}
 
 	vector RandomPoint1;
@@ -251,40 +250,44 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 
 	vector CollisionVector;
 
-	if(FillCollisionVectorLineToCircle(
-		&CollisionVector,
-		RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y,
-		Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius
-	))
-	{
-		Scene->Hero.Position.X += CollisionVector.X;
-		Scene->Hero.Position.Y += CollisionVector.Y;
-	}
+  if (FillCollisionVectorLineToCircle(
+    &CollisionVector,
+    RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y,
+    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y, Memory->Scene->Hero.Radius
+  ))
+  {
+    Memory->Scene->Hero.Position.X += CollisionVector.X;
+    Memory->Scene->Hero.Position.Y += CollisionVector.Y;
+  }
 
+	GlobalDebugTools->SetColor(255, 0, 0, 255);
+	GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-	SetColor(255, 0, 0, 255);
-	FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	SetColor(0, 255, 0, 255);
-	FillBox(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
+	GlobalDebugTools->SetColor(0, 255, 0, 255);
+	GlobalDebugTools->FillBox(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
 			SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
-	SetColor(0, 0, 255, 255);
-	for(int BaddieIndex = 0; BaddieIndex < Scene->BaddieCount; BaddieIndex++)
+	GlobalDebugTools->SetColor(0, 0, 255, 255);
+	for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
 	{
-		RenderBaddie(&Scene->Baddies[BaddieIndex]);
+		RenderBaddie(&Memory->Scene->Baddies[BaddieIndex]);
 	}
 
-	DrawTriangle(Scene->Hero.Position.X, Scene->Hero.Position.Y,
-				 Scene->Hero.DirectionFacing,
-				 Scene->Hero.HalfHeight);
-	DrawCircle(Scene->Hero.Position.X, Scene->Hero.Position.Y, Scene->Hero.Radius, 32);
-	DrawLine(RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y);
+	GlobalDebugTools->DrawTriangle(
+    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
+		Memory->Scene->Hero.DirectionFacing,
+	  Memory->Scene->Hero.HalfHeight);
+	GlobalDebugTools->DrawCircle(
+    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
+    Memory->Scene->Hero.Radius, 32);
+	GlobalDebugTools->DrawLine(RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y);
 }
 
 extern "C"
 LOAD_GAME(LoadGame)
 {
+  GlobalDebugTools = DebugTools;
+
   baddie Baddie = {};
 
   Baddie.Position.X = SCREEN_WIDTH / 2;

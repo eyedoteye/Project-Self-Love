@@ -15,12 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="sdl_main.cpp">
+    <ClCompile Include="..\Mak-Gam\game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="common.h">
+    <ClInclude Include="..\Mak-Gam\game.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

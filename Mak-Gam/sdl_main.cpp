@@ -1,3 +1,6 @@
+// Todo(sigmasleep): just create my own string copy, this is stupid
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
@@ -17,26 +20,19 @@ global_variable bool GlobalRunning = true;
 global_variable SDL_Window *GlobalWindow;
 
 // Note(sigmasleep): Should these functions exist in platform layer?
-internal void
-SetColor(uint8_t R, uint8_t G, uint8_t B, uint8_t A)
+DEBUG_SET_COLOR(DebugSetColor)
 {
-	SDL_SetRenderDrawColor(GlobalRenderer, R, G, B, A);
+	SDL_SetRenderDrawColor(GlobalRenderer, (Uint8)R, (Uint8)G, (Uint8)B, (Uint8)A);
 }
 
-internal void
-DrawLine(float X1, float Y1, float X2, float Y2)
+DEBUG_DRAW_LINE(DebugDrawLine)
 {
-	SDL_RenderDrawLine(GlobalRenderer,
-		(int)X1, (int)Y1,
-		(int)X2, (int)Y2);
+  SDL_RenderDrawLine(GlobalRenderer,
+    (int)X1, (int)Y1,
+    (int)X2, (int)Y2);
 }
 
-internal void
-DrawSemiCircle(
-	float X, float Y,
-	float Radius,
-	int Segments, int TotalSegments,
-	float Angle)
+DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
 {
 	float RadAngle = Angle * DEG2RAD_CONSTANT;
 
@@ -49,9 +45,10 @@ DrawSemiCircle(
 	{
 		Position2.X = X + cosf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
 		Position2.Y = Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
-		SDL_RenderDrawLine(GlobalRenderer,
+		SDL_RenderDrawLine(
+      GlobalRenderer,
 			(int)Position1.X, (int)Position1.Y,
-						   (int)Position2.X, (int)Position2.Y);
+			(int)Position2.X, (int)Position2.Y);
 		Position1.X = Position2.X;
 		Position1.Y = Position2.Y;
 	}
@@ -60,23 +57,20 @@ DrawSemiCircle(
 	Position2.Y = Y + sinf(RadAngle) * Radius;
 	SDL_RenderDrawLine(GlobalRenderer,
 		(int)Position1.X, (int)Position1.Y,
-					   (int)Position2.X, (int)Position2.Y);
+		(int)Position2.X, (int)Position2.Y);
 }
 
-internal void
-DrawCircle(float X, float Y, float Radius, int Segments)
+DEBUG_DRAW_CIRCLE(DebugDrawCircle)
 {
-	DrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
+	DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
 }
 
-internal void
-DrawTriangle(float X, float Y, float Angle, float HalfHeight)
+DEBUG_DRAW_TRIANGLE(DebugDrawTriangle)
 {
-	DrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
+	DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
 }
 
-internal void
-DrawBox(float X, float Y, float Width, float Height)
+DEBUG_DRAW_BOX(DebugDrawBox)
 {
 	SDL_Rect DrawRect;
 	DrawRect.x = (int)X;
@@ -87,8 +81,7 @@ DrawBox(float X, float Y, float Width, float Height)
 	SDL_RenderDrawRect(GlobalRenderer, &DrawRect);
 }
 
-internal void
-FillBox(float X, float Y, float Width, float Height)
+DEBUG_FILL_BOX(DebugFillBox)
 {
 	SDL_Rect FillRect;
 	FillRect.x = (int)X;
@@ -97,6 +90,77 @@ FillBox(float X, float Y, float Width, float Height)
 	FillRect.h = (int)Height;
 
 	SDL_RenderFillRect(GlobalRenderer, &FillRect);
+}
+
+typedef void* game_library;
+struct game_functions
+{
+  game_library Library;
+
+  load_game *LoadGame;
+  update_and_render_game *UpdateAndRenderGame;
+};
+
+internal int
+GetTerminatedStringLength(char* String)
+{
+  int Length = 0;
+  while (*String != '\0')
+  {
+    Length++;
+    String++;
+  }
+
+  return Length;
+}
+internal void
+LoadGameFunctions(game_functions *GameFunctions)
+{
+  char* BasePath;
+  BasePath = SDL_GetBasePath();
+  int BasePathLength = GetTerminatedStringLength(BasePath);
+  
+  char FilePath[200];
+  strncpy(
+    FilePath,
+    BasePath, BasePathLength);
+  strncpy(FilePath + BasePathLength,
+    "MakGamGameLayer.dll", sizeof("MakGamGameLayer.dll"));
+
+  BasePath = SDL_GetBasePath();
+  BasePathLength = GetTerminatedStringLength(BasePath);
+
+  char CopyFilePath[200];
+  strncpy(
+    CopyFilePath,
+    BasePath, BasePathLength);
+  strncpy(CopyFilePath + BasePathLength,
+    "game.dll", sizeof("game.dll"));
+
+  CopyFile(FilePath, CopyFilePath, FALSE);
+  
+  GameFunctions->Library = SDL_LoadObject(CopyFilePath);
+  if(GameFunctions->Library)
+  {
+    GameFunctions->LoadGame = (load_game*)SDL_LoadFunction(
+      GameFunctions->Library, "LoadGame"
+    );
+    GameFunctions->UpdateAndRenderGame = (update_and_render_game*)SDL_LoadFunction(
+      GameFunctions->Library, "UpdateAndRenderGame"
+    );
+  }
+  else
+  {
+    // Todo(sigmasleep): Add debug info/figure out wat do here
+  }
+}
+
+internal void
+UnloadGameFunctions(game_functions *GameFunctions)
+{
+  SDL_UnloadObject(GameFunctions->Library);
+  GameFunctions->LoadGame = NULL;
+  GameFunctions->UpdateAndRenderGame = NULL;
 }
 
 int
@@ -117,11 +181,27 @@ main(int argc, char* args[])
 	SDL_Event e;
 	SDL_GameController *Controller1 = SDL_GameControllerOpen(0);
 
-	float Dt;
-	input_state Input = {};
+  debug_tools DebugTools;
+  DebugTools.DrawBox = DebugDrawBox;
+  DebugTools.DrawCircle = DebugDrawCircle;
+  DebugTools.DrawLine = DebugDrawLine;
+  DebugTools.DrawSemiCircle = DebugDrawSemiCircle;
+  DebugTools.DrawTriangle = DebugDrawTriangle;
+  DebugTools.FillBox = DebugFillBox;
+  DebugTools.SetColor = DebugSetColor;
 
-	scene Scene;
-	LoadGame(&Scene);
+  game_functions GameFunctions;
+  LoadGameFunctions(&GameFunctions);
+
+  float Dt;
+  game_memory GameMemory;
+  input_state Input = {};
+  scene Scene;
+  
+	GameFunctions.LoadGame(&Scene, &DebugTools);
+
+  GameMemory.Input = &Input;
+  GameMemory.Scene = &Scene;
 
 	uint32_t LastTime = SDL_GetTicks();	
 	while(GlobalRunning) {
@@ -258,11 +338,13 @@ main(int argc, char* args[])
 			}
 		}
 
-		UpdateAndRenderGame(&Input, &Scene, Dt);
+		GameFunctions.UpdateAndRenderGame(&GameMemory, Dt);
 		SDL_RenderPresent(GlobalRenderer);
 
 		SDL_Delay(1);
 	}
+
+  UnloadGameFunctions(&GameFunctions);
 
 	SDL_GameControllerClose(Controller1);
 

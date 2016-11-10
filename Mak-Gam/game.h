@@ -1,16 +1,10 @@
 #pragma once
 
+#include "common.h"
+
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 270
 #define CONTROLLER_MAX 4
-
-#define SQRT2	1.41421356237f
-#define PI		3.14159265359f
-#define DEG2RAD_CONSTANT	PI / 180.f
-#define RAD2DEG_CONSTANT	180.f / PI
-
-#define CLIP(X, A, B) ((X < A) ? A : ((X > B) ? B : X))
-#define ABS(X) (X < 0 ? -X : X)
 
 struct vector
 {
@@ -77,17 +71,6 @@ struct scene
 	int BaddieCount;
 };
 
-#define LOAD_GAME(name) void name(scene *Scene)
-typedef LOAD_GAME(load_game);
-
-#define UPDATE_AND_RENDER_GAME(name) void name( \
-  input_state *Input, scene *Scene, float Dt  \
-)
-typedef UPDATE_AND_RENDER_GAME(update_and_render_game);
-UPDATE_AND_RENDER_GAME(UpdateAndRenderGameStub) {
-
-};
-
 // Note(sigmasleep): Should be provided by platform layer.
 // Note(sigmasleep): Is this the best place for this?
 #define DEBUG_DRAW_SEMI_CIRCLE(name) void name( \
@@ -103,7 +86,7 @@ typedef DEBUG_DRAW_SEMI_CIRCLE(debug_draw_semi_circle);
   float Radius,     \
   int Segments      \
 )
-typedef DEBUG_DRAW_CIRCLE(debug_draw_semi_circle);
+typedef DEBUG_DRAW_CIRCLE(debug_draw_circle);
 
 #define DEBUG_DRAW_TRIANGLE(name) void name(  \
   float X, float Y, \
@@ -130,5 +113,29 @@ typedef DEBUG_DRAW_BOX(debug_draw_box);
 )
 typedef DEBUG_DRAW_LINE(debug_draw_line);
 
-#define DEBUG_SET_COLOR(name) void name(uint8_t R, uint8_t G, uint8_t B, uint8_t A)
+#define DEBUG_SET_COLOR(name) void name(int R, int G, int B, int A)
 typedef DEBUG_SET_COLOR(debug_set_color);
+
+struct debug_tools
+{
+  debug_draw_semi_circle *DrawSemiCircle;
+  debug_draw_circle *DrawCircle;
+  debug_draw_triangle *DrawTriangle;
+  debug_fill_box *FillBox;
+  debug_draw_box *DrawBox;
+  debug_draw_line *DrawLine;
+  debug_set_color *SetColor;
+};
+global_variable debug_tools *GlobalDebugTools;
+
+struct game_memory
+{
+  scene *Scene;
+  input_state *Input;
+};
+
+#define LOAD_GAME(name) void name(scene *Scene, debug_tools *DebugTools)
+typedef LOAD_GAME(load_game);
+
+#define UPDATE_AND_RENDER_GAME(name) void name(game_memory *Memory, float Dt)
+typedef UPDATE_AND_RENDER_GAME(update_and_render_game);
