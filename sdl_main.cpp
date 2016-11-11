@@ -118,6 +118,7 @@ GetTerminatedStringLength(char* String)
 internal void
 LoadGameFunctions(game_functions *GameFunctions)
 {
+  // Note(sigmasleep): Find a better way to do this?
   char* BasePath;
   BasePath = SDL_GetBasePath();
   int BasePathLength = GetTerminatedStringLength(BasePath);
@@ -127,7 +128,7 @@ LoadGameFunctions(game_functions *GameFunctions)
     FilePath,
     BasePath, BasePathLength);
   strncpy(FilePath + BasePathLength,
-    "MakGamGameLayer.dll", sizeof("MakGamGameLayer.dll"));
+    "game.dll", sizeof("game.dll"));
 
   BasePath = SDL_GetBasePath();
   BasePathLength = GetTerminatedStringLength(BasePath);
@@ -137,7 +138,7 @@ LoadGameFunctions(game_functions *GameFunctions)
     CopyFilePath,
     BasePath, BasePathLength);
   strncpy(CopyFilePath + BasePathLength,
-    "game.dll", sizeof("game.dll"));
+    "gameruntime.dll", sizeof("gameruntime.dll"));
 
   // Todo(sigmasleep): Find a better method?
   CopyFile(FilePath, CopyFilePath, FALSE);
@@ -222,7 +223,7 @@ main(int argc, char* args[])
       FilePath,
       BasePath, BasePathLength);
     strncpy(FilePath + BasePathLength,
-      "MakGamGameLayer.dll", sizeof("MakGamGameLayer.dll"));
+      "game.dll", sizeof("game.dll"));
     stat(FilePath, &DLLInfo);
     if(DLLInfo.st_mtime != GameFunctions.Timestamp)
     {
