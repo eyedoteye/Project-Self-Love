@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <sys/stat.h>
 
 #define internal static
 #define global_variable static
@@ -95,6 +96,7 @@ DEBUG_FILL_BOX(DebugFillBox)
 typedef void* game_library;
 struct game_functions
 {
+  time_t Timestamp;
   game_library Library;
 
   load_game *LoadGame;
@@ -137,6 +139,7 @@ LoadGameFunctions(game_functions *GameFunctions)
   strncpy(CopyFilePath + BasePathLength,
     "game.dll", sizeof("game.dll"));
 
+  // Todo(sigmasleep): Find a better method?
   CopyFile(FilePath, CopyFilePath, FALSE);
   
   GameFunctions->Library = SDL_LoadObject(CopyFilePath);
@@ -159,6 +162,7 @@ internal void
 UnloadGameFunctions(game_functions *GameFunctions)
 {
   SDL_UnloadObject(GameFunctions->Library);
+  GameFunctions->Library = NULL;
   GameFunctions->LoadGame = NULL;
   GameFunctions->UpdateAndRenderGame = NULL;
 }
@@ -207,6 +211,27 @@ main(int argc, char* args[])
 	while(GlobalRunning) {
 		Dt = (SDL_GetTicks() - LastTime) / 1000.f;
 		LastTime = SDL_GetTicks();
+
+    struct stat DLLInfo;
+
+    char *BasePath = SDL_GetBasePath();
+    int BasePathLength = GetTerminatedStringLength(BasePath);
+
+    char FilePath[200];
+    strncpy(
+      FilePath,
+      BasePath, BasePathLength);
+    strncpy(FilePath + BasePathLength,
+      "MakGamGameLayer.dll", sizeof("MakGamGameLayer.dll"));
+    stat(FilePath, &DLLInfo);
+    if(DLLInfo.st_mtime != GameFunctions.Timestamp)
+    {
+      UnloadGameFunctions(&GameFunctions);
+      SDL_Delay(500);
+      LoadGameFunctions(&GameFunctions);
+      GameFunctions.LoadGame(GameMemory.Scene, &DebugTools);
+      GameFunctions.Timestamp = DLLInfo.st_mtime;
+    }
 
 		while(SDL_PollEvent(&e) != 0)
 		{

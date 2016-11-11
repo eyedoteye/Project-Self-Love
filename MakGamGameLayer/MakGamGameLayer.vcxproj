@@ -70,6 +70,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.dll</TargetExt>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -82,7 +83,12 @@
     </ClCompile>
     <Link />
     <Link>
-      <AdditionalOptions>-incremental:no -DLL -Export:LoadGame -Export:UpdateAndRenderGame %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-DLL -Export:LoadGame -Export:UpdateAndRenderGame</AdditionalOptions>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <ProfileGuidedDatabase />
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

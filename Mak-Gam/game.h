@@ -69,6 +69,7 @@ struct scene
 	hero Hero;
 	baddie Baddies[255];
 	int BaddieCount;
+  bool Loaded;
 };
 
 // Note(sigmasleep): Should be provided by platform layer.
