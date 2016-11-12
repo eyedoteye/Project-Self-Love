@@ -140,7 +140,14 @@ LoadGameFunctions(game_functions *GameFunctions)
   strncpy(CopyFilePath + BasePathLength,
     "gameruntime.dll", sizeof("gameruntime.dll"));
 
-  // Todo(sigmasleep): Find a better method?
+  // Note(sigmasleep): Does this ensure lock?
+  struct stat ThrowAway;
+  while(stat("lock.tmp", &ThrowAway) == 0)
+  {
+    SDL_Delay(1);
+  }
+
+  // Todo(sigmasleep): Find a x-platform method?
   CopyFile(FilePath, CopyFilePath, FALSE);
   
   GameFunctions->Library = SDL_LoadObject(CopyFilePath);
@@ -228,7 +235,6 @@ main(int argc, char* args[])
     if(DLLInfo.st_mtime != GameFunctions.Timestamp)
     {
       UnloadGameFunctions(&GameFunctions);
-      SDL_Delay(500);
       LoadGameFunctions(&GameFunctions);
       GameFunctions.LoadGame(GameMemory.Scene, &DebugTools);
       GameFunctions.Timestamp = DLLInfo.st_mtime;
