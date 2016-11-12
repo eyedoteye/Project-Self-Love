@@ -209,21 +209,22 @@ main(int argc, char* args[])
   GameMemory.Scene = &Scene;
 
 	uint32_t LastTime = SDL_GetTicks();	
-	while(GlobalRunning) {
+	
+  char *BasePath = SDL_GetBasePath();
+  int BasePathLength = GetTerminatedStringLength(BasePath);
+
+  char FilePath[200];
+  strncpy(
+    FilePath,
+    BasePath, BasePathLength);
+  strncpy(FilePath + BasePathLength,
+    "game.dll", sizeof("game.dll"));
+  while(GlobalRunning) {
 		Dt = (SDL_GetTicks() - LastTime) / 1000.f;
 		LastTime = SDL_GetTicks();
 
     struct stat DLLInfo;
 
-    char *BasePath = SDL_GetBasePath();
-    int BasePathLength = GetTerminatedStringLength(BasePath);
-
-    char FilePath[200];
-    strncpy(
-      FilePath,
-      BasePath, BasePathLength);
-    strncpy(FilePath + BasePathLength,
-      "game.dll", sizeof("game.dll"));
     stat(FilePath, &DLLInfo);
     if(DLLInfo.st_mtime != GameFunctions.Timestamp)
     {
