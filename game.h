@@ -69,7 +69,6 @@ struct scene
 	hero Hero;
 	baddie Baddies[255];
 	int BaddieCount;
-  bool Loaded;
 };
 
 // Note(sigmasleep): Should be provided by platform layer.
@@ -135,8 +134,11 @@ struct game_memory
   input_state *Input;
 };
 
-#define LOAD_GAME(name) void name(scene *Scene, debug_tools *DebugTools)
+#define LOAD_GAME(name) void name(game_memory *Memory, debug_tools *DebugTools)
 typedef LOAD_GAME(load_game);
+
+#define RELOAD_GAME(name) void name(game_memory *Memory, debug_tools *DebugTools)
+typedef RELOAD_GAME(reload_game);
 
 #define UPDATE_AND_RENDER_GAME(name) void name(game_memory *Memory, float Dt)
 typedef UPDATE_AND_RENDER_GAME(update_and_render_game);

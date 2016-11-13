@@ -100,6 +100,7 @@ struct game_functions
   game_library Library;
 
   load_game *LoadGame;
+  reload_game *ReloadGame;
   update_and_render_game *UpdateAndRenderGame;
 };
 
@@ -153,8 +154,15 @@ LoadGameFunctions(game_functions *GameFunctions)
   GameFunctions->Library = SDL_LoadObject(CopyFilePath);
   if(GameFunctions->Library)
   {
+    struct stat DLLInfo;
+    stat(FilePath, &DLLInfo);
+    GameFunctions->Timestamp = DLLInfo.st_mtime;
+
     GameFunctions->LoadGame = (load_game*)SDL_LoadFunction(
       GameFunctions->Library, "LoadGame"
+    );
+    GameFunctions->ReloadGame = (reload_game*)SDL_LoadFunction(
+      GameFunctions->Library, "ReloadGame"
     );
     GameFunctions->UpdateAndRenderGame = (update_and_render_game*)SDL_LoadFunction(
       GameFunctions->Library, "UpdateAndRenderGame"
@@ -208,12 +216,11 @@ main(int argc, char* args[])
   float Dt;
   game_memory GameMemory;
   input_state Input = {};
-  scene Scene;
-  
-	GameFunctions.LoadGame(&Scene, &DebugTools);
-
+  scene Scene = {};
   GameMemory.Input = &Input;
   GameMemory.Scene = &Scene;
+
+	GameFunctions.LoadGame(&GameMemory, &DebugTools);
 
 	uint32_t LastTime = SDL_GetTicks();	
 	
@@ -237,8 +244,7 @@ main(int argc, char* args[])
     {
       UnloadGameFunctions(&GameFunctions);
       LoadGameFunctions(&GameFunctions);
-      GameFunctions.LoadGame(GameMemory.Scene, &DebugTools);
-      GameFunctions.Timestamp = DLLInfo.st_mtime;
+      GameFunctions.ReloadGame(&GameMemory, &DebugTools);
     }
 
 		while(SDL_PollEvent(&e) != 0)

@@ -288,28 +288,43 @@ LOAD_GAME(LoadGame)
 {
   GlobalDebugTools = DebugTools;
 
-  //if (!Scene->Loaded)
-  {
-    Scene->Loaded = true;
-    baddie Baddie = {};
+  scene *Scene = Memory->Scene;
 
-    Baddie.Position.X = SCREEN_WIDTH / 4;
-    Baddie.Position.Y = SCREEN_HEIGHT / 2;
-    Baddie.Radius = 14;
+  scene ClearedScene = {};
+  *Scene = ClearedScene;
 
-    scene ClearedScene = {};
-    *Scene = ClearedScene;
+  baddie Baddie = {};
+  Baddie.Position.X = SCREEN_WIDTH / 4;
+  Baddie.Position.Y = SCREEN_HEIGHT / 2;
+  Baddie.Radius = 14;
 
-    AddBaddieToScene(&Baddie, Scene);
-    Baddie.Position.X += SCREEN_WIDTH / 4;
-    AddBaddieToScene(&Baddie, Scene);
+  AddBaddieToScene(&Baddie, Scene);
+  Baddie.Position.X += SCREEN_WIDTH / 4;
+  AddBaddieToScene(&Baddie, Scene);
 
+  Scene->Hero.Position.X = SCREEN_WIDTH / 4;
+  Scene->Hero.Position.Y = SCREEN_HEIGHT / 4;
+  Scene->Hero.DirectionFacing = 0;
+  Scene->Hero.CurrentPathIndex = 0;
+  Scene->Hero.Radius = 7;
+  Scene->Hero.HalfHeight = acosf(30 * DEG2RAD_CONSTANT) * Scene->Hero.Radius * 2;
+}
 
-    Scene->Hero.Position.X = SCREEN_WIDTH / 4;
-    Scene->Hero.Position.Y = SCREEN_HEIGHT / 4;
-    Scene->Hero.DirectionFacing = 0;
-    Scene->Hero.CurrentPathIndex = 0;
-    Scene->Hero.Radius = 7;
-    Scene->Hero.HalfHeight = acosf(30 * DEG2RAD_CONSTANT) * Scene->Hero.Radius * 2;
-  }
- }
+extern "C"
+RELOAD_GAME(ReloadGame)
+{
+	GlobalDebugTools = DebugTools;
+
+	scene *Scene = Memory->Scene;
+
+  baddie Baddie = {};
+  Baddie.Position.X = SCREEN_WIDTH / 4;
+  Baddie.Position.Y = SCREEN_HEIGHT / 2;
+  Baddie.Radius = 14;
+
+  Scene->BaddieCount = 0;
+
+  AddBaddieToScene(&Baddie, Scene);
+  Baddie.Position.X += SCREEN_WIDTH / 4;
+  AddBaddieToScene(&Baddie, Scene);
+}
