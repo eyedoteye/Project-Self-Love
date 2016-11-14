@@ -128,14 +128,14 @@ FillCollisionVectorLineToCircle(
 	);
 }
 
-//internal void
-//NormalizeVector(vector *Input, vector *Output)
-//{
-//  float Magnitude = sqrtf(Input->X * Input->X + Input->Y * Input->Y);
-//  Output->X = Input->X / Magnitude;
-//  Output->Y = Input->Y / Magnitude;
-//}
-//
+internal void
+NormalizeVector(vector *Output, vector *Input)
+{
+  float Magnitude = sqrtf(Input->X * Input->X + Input->Y * Input->Y);
+  Output->X = Input->X / Magnitude;
+  Output->Y = Input->Y / Magnitude;
+}
+
 //internal bool
 //FillCollisionTsParametricLines(
 //  float *T1, float *T2,
@@ -189,8 +189,19 @@ FillCollisionVectorLineToLine(
   Direction2.Y = Y4 - Y3;
   //NormalizeVector(&Direction2, &Direction2);
 
-  float T1 = 1;
-  float T2 = 1;
+  vector Direction1Normalized;
+  vector Direction2Normalized;
+
+  NormalizeVector(&Direction1Normalized, &Direction1);
+  NormalizeVector(&Direction2Normalized, &Direction2);
+
+  if(Direction1.X / Direction1.Y == Direction2.X / Direction2.Y)
+  {
+    return false;
+  }
+
+  float T1;
+  float T2;
 
   {
     T2 = (Direction1.X * (Y3 - Y1) + Direction1.Y * (X1 - X3)) / (Direction2.X*Direction1.Y - Direction2.Y*Direction1.X);
@@ -205,10 +216,8 @@ FillCollisionVectorLineToLine(
     CollisionVector->X = X1 + Direction1.X * T1;
     CollisionVector->Y = Y1 + Direction1.Y * T1;
 
-      return true;
-    //}
+    return true;
   }
-  //return false;
 }
 
 internal void
