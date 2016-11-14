@@ -193,7 +193,7 @@ FillCollisionVectorLineToLine(
   float T2 = 1;
 
   {
-    T2 = (Direction1.X * (Y3 - Y1) + Direction2.Y * (X1 - X3)) / (Direction2.X*Direction1.Y - Direction2.Y*Direction1.X);
+    T2 = (Direction1.X * (Y3 - Y1) + Direction1.Y * (X1 - X3)) / (Direction2.X*Direction1.Y - Direction2.Y*Direction1.X);
     if (Direction1.X != 0)
     {
       T1 = (X3 + Direction2.X*T2 - X1) / Direction1.X;
@@ -367,10 +367,10 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
   
   if(FillCollisionVectorLineToLine(
     &CollisionVector,
-    RandomPoint1.X, RandomPoint1.Y,
-    RandomPoint2.X, RandomPoint2.Y,
     RandomPoint3.X, RandomPoint3.Y,
-    RandomPoint4.X, RandomPoint4.Y))
+    RandomPoint4.X, RandomPoint4.Y,
+    RandomPoint1.X, RandomPoint1.Y,
+    RandomPoint2.X, RandomPoint2.Y))
   {
     GlobalDebugTools->DrawLine(
       RandomPoint4.X, RandomPoint4.Y,
