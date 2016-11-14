@@ -98,15 +98,15 @@ IsPointLeftHandToLine(
 }
 
 internal bool
-FillCollisionVectorLineToCircle(
+FillCollisionVectorCircleToLine(
 	vector *CollisionVector,
-	float X1, float Y1, float X2, float Y2,
-	float X3, float Y3, float R3
+	float CircleX, float CircleY, float CircleR,
+  float X1, float Y1, float X2, float Y2
 )
 {
 	vector Hypotenuse;
-	Hypotenuse.X = X3 - X1;
-	Hypotenuse.Y = Y3 - Y1;
+	Hypotenuse.X = CircleX - X1;
+	Hypotenuse.Y = CircleY - Y1;
 
 	vector Line;
 	Line.X = X2 - X1;
@@ -144,7 +144,7 @@ FillCollisionVectorLineToCircle(
 	return FillCollisionVectorCircleToCircle(
 		CollisionVector,
 		HypotenuseProjection.X, HypotenuseProjection.Y, 0,
-		Hypotenuse.X, Hypotenuse.Y, R3
+		Hypotenuse.X, Hypotenuse.Y, CircleR
 	);
 }
 
@@ -218,8 +218,65 @@ FillCollisionVectorLineToLine(
   if(T1 > 0 && T1 < 1 &&
      T2 > 0 && T2 < 1)
   {
-    CollisionVector->X = (X2 - X1) * T1;
-    CollisionVector->Y = (Y2 - Y1) * T1;
+    CollisionVector->X = -(X2 - X1) * T1;
+    CollisionVector->Y = -(Y2 - Y1) * T1;
+    return true;
+  }
+
+  return false;
+}
+
+internal bool
+FillCollisionVectorCircleToLineWithVelocity(
+  vector *CollisionVector,
+  float CircleX, float CircleY,
+  float CircleR,
+  float CircleVX, float CircleVY,
+  float LineX1, float LineY1,
+  float LineX2, float LineY2
+)
+{
+  vector CircleVelocity;
+  CircleVelocity.X = CircleVX;
+  CircleVelocity.Y = CircleVY;
+  float CircleVelocityMagnitude =
+    sqrtf(CircleVelocity.X * CircleVelocity.X +
+    CircleVelocity.Y * CircleVelocity.Y);
+  
+  vector CircleDirection;
+  CircleDirection.X = CircleVelocity.X / CircleVelocityMagnitude;
+  CircleDirection.Y = CircleVelocity.Y / CircleVelocityMagnitude;
+
+  vector CirclePathStart;
+  CirclePathStart.X = CircleX - CircleR * CircleDirection.X;
+  CirclePathStart.Y = CircleY - CircleR * CircleDirection.Y;
+  //float CirclePathMagnitude = CircleVelocityMagnitude + CircleR * 2;
+  vector CirclePathEnd;
+  CirclePathEnd.X = CirclePathStart.X + CircleDirection.X * CircleR * 2;
+  CirclePathEnd.Y = CirclePathStart.Y + CircleDirection.Y * CircleR * 2;
+
+  GlobalDebugTools->SetColor(0, 0, 0, 255);
+  GlobalDebugTools->DrawLine(
+    CirclePathStart.X, CirclePathStart.Y,
+    CirclePathEnd.X, CirclePathEnd.Y);
+
+  if(FillCollisionVectorCircleToLine(
+    CollisionVector,
+    CircleX, CircleY,
+    CircleR,
+    LineX1, LineY1, LineX2, LineY2
+  ))
+  {
+    return true;
+  }
+
+  if (FillCollisionVectorCircleToLine(
+    CollisionVector,
+    CircleX + CircleVX, CircleY + CircleVY,
+    CircleR,
+    LineX1, LineY1, LineX2, LineY2
+  ))
+  {
     return true;
   }
 
@@ -306,8 +363,8 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 
 	ProcessControllerMovement(&Input->Controllers[0], &InputMovement);
 
-	Hero->Position.X += 100 * InputMovement.X * Dt;
-	Hero->Position.Y += 100 * InputMovement.Y * Dt;
+	Hero->Velocity.X = 100 * InputMovement.X * Dt;
+	Hero->Velocity.Y = 100 * InputMovement.Y * Dt;
 
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
 		Hero->DirectionFacing = atan2f(InputMovement.Y, InputMovement.X) * RAD2DEG_CONSTANT;
@@ -316,6 +373,13 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 extern "C"
 UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 {
+  GlobalDebugTools->SetColor(255, 255, 0, 255);
+  GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  GlobalDebugTools->SetColor(0, 255, 0, 255);
+  GlobalDebugTools->FillBox(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
+    SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+
 	MovePlayer(&Memory->Scene->Hero, Memory->Input, Dt);
 	for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
 	{
@@ -337,22 +401,21 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 
 	vector CollisionVector;
 
-  if (FillCollisionVectorLineToCircle(
+  if (FillCollisionVectorCircleToLineWithVelocity(
     &CollisionVector,
-    RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y,
-    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y, Memory->Scene->Hero.Radius
+    Memory->Scene->Hero.Position.X,
+    Memory->Scene->Hero.Position.Y,
+    Memory->Scene->Hero.Radius,
+    Memory->Scene->Hero.Velocity.X,
+    Memory->Scene->Hero.Velocity.Y,
+    RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y
   ))
   {
     Memory->Scene->Hero.Position.X += CollisionVector.X;
     Memory->Scene->Hero.Position.Y += CollisionVector.Y;
   }
-
-	GlobalDebugTools->SetColor(255, 0, 0, 255);
-	GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-  
-	GlobalDebugTools->SetColor(0, 255, 0, 255);
-  GlobalDebugTools->FillBox(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
-    SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+  Memory->Scene->Hero.Position.X += Memory->Scene->Hero.Velocity.X;
+  Memory->Scene->Hero.Position.Y += Memory->Scene->Hero.Velocity.Y;
   
 	GlobalDebugTools->SetColor(0, 0, 255, 255);
 	for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
@@ -389,8 +452,8 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
     GlobalDebugTools->SetColor(255, 255, 255, 255);
 
     vector Point;
-    Point.X = RandomPoint3.X + CollisionVector.X;
-    Point.Y = RandomPoint3.Y + CollisionVector.Y;
+    Point.X = RandomPoint3.X - CollisionVector.X;
+    Point.Y = RandomPoint3.Y - CollisionVector.Y;
 
     if(IsPointLeftHandToLine(
       Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,

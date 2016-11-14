@@ -58,6 +58,7 @@ struct baddie
 struct hero
 {
 	vector Position;
+  vector Velocity;
 	int CurrentPathIndex;
 	float DirectionFacing;
 	float Radius;
