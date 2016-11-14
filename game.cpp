@@ -78,6 +78,26 @@ FillCollisionVectorCircleToCircle(
 }
 
 internal bool
+IsPointLeftHandToLine(
+  float PointX, float PointY,
+  float X1, float Y1,
+  float X2, float Y2
+)
+{
+  vector LocalPoint;
+  LocalPoint.X = PointX - X1;
+  LocalPoint.Y = PointY - Y1;
+
+  vector LeftHandNormal;
+  LeftHandNormal.X = Y2 - Y1;
+  LeftHandNormal.Y = X1 - X2;
+
+  float DotProduct = LeftHandNormal.X * LocalPoint.X + LeftHandNormal.Y * LocalPoint.Y;
+
+  return DotProduct > 0;
+}
+
+internal bool
 FillCollisionVectorLineToCircle(
 	vector *CollisionVector,
 	float X1, float Y1, float X2, float Y2,
@@ -136,39 +156,46 @@ NormalizeVector(vector *Output, vector *Input)
   Output->Y = Input->Y / Magnitude;
 }
 
-//internal bool
-//FillCollisionTsParametricLines(
-//  float *T1, float *T2,
-//  float X1, float Y1, vector *Direction1,
-//  float X2, float Y2, vector *Direction2
-//)
-//{
-//  if (Direction1->X == Direction2->X && Direction2->Y == Direction2->Y)
-//  {
-//    return false;
-//  }
-//
-//  // X = X1 + Direction1.Y * T1 // X = X3 + Direction2.Y * T2
-//  // Y = Y1 + Direction1.X * T1 // Y = Y3 + Direction2.X * T2
-//  // T1 = (X1 - X3 + Direction1.X * T2) / (Direction2.X)
-//  // T1 = (Y1 - Y3 + Direction1.Y * T2) / (Direction2.Y)
-//
-//  // (X1 - X2) * Direction2.X + Direction1.X * T2 * Direction2.Y =
-//  // (Y1 - Y2) * Direction2.Y + Direction1.Y * T2 * Direction2.X
-//
-//  // Direction1.X * T2 * Direction2.Y - Direction1.Y * T2 * Direction2.X =
-//  // T2 (Direction1.X * Direction2.Y - Direction1.Y * Direction2.X) =
-//
-//  // T2 = ((X1 - X2) * Direction2.X - (Y1 - Y2) * Direction2.Y) /
-//  //      (Direction1.X * Direction2.Y - Direction1.Y * Direction2.X)
-//
-//  *T2 = (X1 - X2) * Direction1->Y + (Y2 - Y1) * Direction1->X;
-//  *T2 /= (Direction2->X * Direction1->Y - Direction2->Y * Direction1->X);
-//
-//  *T1 = (X2 + Direction2->Y * *T2 - Y2) / Direction1->Y; 
-//
-//  return true;
-//}
+internal bool
+FillCollisionTsLineToLine(
+  float* T1, float* T2,
+  float X1, float Y1,
+  float X2, float Y2,
+  float X3, float Y3,
+  float X4, float Y4
+)
+{
+  vector Direction1;
+  Direction1.X = X2 - X1;
+  Direction1.Y = Y2 - Y1;
+
+  vector Direction2;
+  Direction2.X = X4 - X3;
+  Direction2.Y = Y4 - Y3;
+
+  vector Direction1Normalized;
+  vector Direction2Normalized;
+
+  NormalizeVector(&Direction1Normalized, &Direction1);
+  NormalizeVector(&Direction2Normalized, &Direction2);
+
+  if (Direction1.X / Direction1.Y == Direction2.X / Direction2.Y)
+  {
+    return false;
+  }
+
+  *T2 = (Direction1.X * (Y3 - Y1) + Direction1.Y * (X1 - X3)) / (Direction2.X*Direction1.Y - Direction2.Y*Direction1.X);
+  if (Direction1.X != 0)
+  {
+    *T1 = (X3 + Direction2.X*(*T2) - X1) / Direction1.X;
+  }
+  else
+  {
+    *T1 = (Y3 + Direction2.Y*(*T2) - Y1) / Direction1.Y;
+  }
+
+  return true;
+}
 
 internal bool
 FillCollisionVectorLineToLine(
@@ -179,45 +206,24 @@ FillCollisionVectorLineToLine(
   float X4, float Y4
 )
 {
-  vector Direction1;
-  Direction1.X = X2 - X1;
-  Direction1.Y = Y2 - Y1;
-  //NormalizeVector(&Direction1, &Direction1);
-
-  vector Direction2;
-  Direction2.X = X4 - X3;
-  Direction2.Y = Y4 - Y3;
-  //NormalizeVector(&Direction2, &Direction2);
-
-  vector Direction1Normalized;
-  vector Direction2Normalized;
-
-  NormalizeVector(&Direction1Normalized, &Direction1);
-  NormalizeVector(&Direction2Normalized, &Direction2);
-
-  if(Direction1.X / Direction1.Y == Direction2.X / Direction2.Y)
-  {
-    return false;
-  }
-
   float T1;
   float T2;
 
-  {
-    T2 = (Direction1.X * (Y3 - Y1) + Direction1.Y * (X1 - X3)) / (Direction2.X*Direction1.Y - Direction2.Y*Direction1.X);
-    if (Direction1.X != 0)
-    {
-      T1 = (X3 + Direction2.X*T2 - X1) / Direction1.X;
-    }
-    else
-    {
-      T1 = (Y3 + Direction2.Y*T2 - Y1) / Direction1.Y;
-    }
-    CollisionVector->X = X1 + Direction1.X * T1;
-    CollisionVector->Y = Y1 + Direction1.Y * T1;
+  FillCollisionTsLineToLine(
+    &T1, &T2,
+    X1, Y1, X2, Y2,
+    X3, Y3, X4, Y4
+  );
 
+  if(T1 > 0 && T1 < 1 &&
+     T2 > 0 && T2 < 1)
+  {
+    CollisionVector->X = (X2 - X1) * T1;
+    CollisionVector->Y = (Y2 - Y1) * T1;
     return true;
   }
+
+  return false;
 }
 
 internal void
@@ -226,8 +232,8 @@ CollideWithBaddie(hero *Hero, baddie *Baddie)
 	vector CollisionVector;
 
 	if(FillCollisionVectorCircleToCircle(&CollisionVector,
-										 Hero->Position.X, Hero->Position.Y, Hero->Radius,
-										 Baddie->Position.X, Baddie->Position.Y, Baddie->Radius))
+	  Hero->Position.X, Hero->Position.Y, Hero->Radius,
+		Baddie->Position.X, Baddie->Position.Y, Baddie->Radius))
 	{
 		Baddie->Position.X += CollisionVector.X;
 		Baddie->Position.Y += CollisionVector.Y;
@@ -365,13 +371,12 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 
   vector RandomPoint3;
   RandomPoint3.X = Memory->Scene->Hero.Position.X;
-  RandomPoint3.Y = Memory->Scene->Hero.Position.Y;
+  RandomPoint3.Y = Memory->Scene->Hero.Position.Y - 60;
   vector RandomPoint4;
   RandomPoint4.X = RandomPoint3.X;
-  RandomPoint4.Y = RandomPoint3.Y + 100;
+  RandomPoint4.Y = RandomPoint3.Y + 120;
 
   GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
-  GlobalDebugTools->SetColor(255, 255, 255, 255);
   CollisionVector = {};
   
   if(FillCollisionVectorLineToLine(
@@ -381,10 +386,27 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
     RandomPoint1.X, RandomPoint1.Y,
     RandomPoint2.X, RandomPoint2.Y))
   {
-    GlobalDebugTools->DrawLine(
-      RandomPoint4.X, RandomPoint4.Y,
-      CollisionVector.X,
-      CollisionVector.Y);
+    GlobalDebugTools->SetColor(255, 255, 255, 255);
+
+    vector Point;
+    Point.X = RandomPoint3.X + CollisionVector.X;
+    Point.Y = RandomPoint3.Y + CollisionVector.Y;
+
+    if(IsPointLeftHandToLine(
+      Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
+      RandomPoint1.X, RandomPoint1.Y,
+      RandomPoint2.X, RandomPoint2.Y))
+    {
+      GlobalDebugTools->DrawLine(
+        RandomPoint4.X, RandomPoint4.Y,
+        Point.X, Point.Y);
+    }
+    else
+    {
+      GlobalDebugTools->DrawLine(
+        RandomPoint3.X, RandomPoint3.Y,
+        Point.X, Point.Y);
+    }
   }
 }
 
