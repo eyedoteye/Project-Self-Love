@@ -104,7 +104,6 @@ FillCollisionVectorLineToCircle(
 	HypotenuseProjection.X = ProjectionConstant * Line.X;
 	HypotenuseProjection.Y = ProjectionConstant * Line.Y;
 
-
 	/*char output[255];
 	snprintf(output, 255, "Line: %f %f\n",
 	Line.X, Line.Y);
@@ -129,15 +128,88 @@ FillCollisionVectorLineToCircle(
 	);
 }
 
-/*internal bool
+//internal void
+//NormalizeVector(vector *Input, vector *Output)
+//{
+//  float Magnitude = sqrtf(Input->X * Input->X + Input->Y * Input->Y);
+//  Output->X = Input->X / Magnitude;
+//  Output->Y = Input->Y / Magnitude;
+//}
+//
+//internal bool
+//FillCollisionTsParametricLines(
+//  float *T1, float *T2,
+//  float X1, float Y1, vector *Direction1,
+//  float X2, float Y2, vector *Direction2
+//)
+//{
+//  if (Direction1->X == Direction2->X && Direction2->Y == Direction2->Y)
+//  {
+//    return false;
+//  }
+//
+//  // X = X1 + Direction1.Y * T1 // X = X3 + Direction2.Y * T2
+//  // Y = Y1 + Direction1.X * T1 // Y = Y3 + Direction2.X * T2
+//  // T1 = (X1 - X3 + Direction1.X * T2) / (Direction2.X)
+//  // T1 = (Y1 - Y3 + Direction1.Y * T2) / (Direction2.Y)
+//
+//  // (X1 - X2) * Direction2.X + Direction1.X * T2 * Direction2.Y =
+//  // (Y1 - Y2) * Direction2.Y + Direction1.Y * T2 * Direction2.X
+//
+//  // Direction1.X * T2 * Direction2.Y - Direction1.Y * T2 * Direction2.X =
+//  // T2 (Direction1.X * Direction2.Y - Direction1.Y * Direction2.X) =
+//
+//  // T2 = ((X1 - X2) * Direction2.X - (Y1 - Y2) * Direction2.Y) /
+//  //      (Direction1.X * Direction2.Y - Direction1.Y * Direction2.X)
+//
+//  *T2 = (X1 - X2) * Direction1->Y + (Y2 - Y1) * Direction1->X;
+//  *T2 /= (Direction2->X * Direction1->Y - Direction2->Y * Direction1->X);
+//
+//  *T1 = (X2 + Direction2->Y * *T2 - Y2) / Direction1->Y; 
+//
+//  return true;
+//}
+
+internal bool
 FillCollisionVectorLineToLine(
-vector *CollisionVector,
-float X1, float Y1, float X2, float Y2,
-float X3, float Y3, float X4, float Y4
+  vector *CollisionVector,
+  float X1, float Y1,
+  float X2, float Y2,
+  float X3, float Y3,
+  float X4, float Y4
 )
 {
-return false;
-}*/
+  vector Direction1;
+  Direction1.X = X2 - X1;
+  Direction1.Y = Y2 - Y1;
+  //NormalizeVector(&Direction1, &Direction1);
+
+  vector Direction2;
+  Direction2.X = X4 - X3;
+  Direction2.Y = Y4 - Y3;
+  //NormalizeVector(&Direction2, &Direction2);
+
+  float T1 = 1;
+  float T2 = 1;
+
+  {
+    T2 = (Direction1.X * (Y3 - Y1) + Direction2.Y * (X1 - X3)) / (Direction2.X*Direction1.Y - Direction2.Y*Direction1.X);
+    if (Direction1.X != 0)
+    {
+      T1 = (X3 + Direction2.X*T2 - X1) / Direction1.X;
+    }
+    else
+    {
+      T1 = (Y3 + Direction2.Y*T2 - Y1) / Direction1.Y;
+    }
+    CollisionVector->X = X1 + Direction1.X * T1;
+    CollisionVector->Y = Y1 + Direction1.Y * T1;
+
+      return true;
+    //}
+  }
+  //return false;
+}
 
 internal void
 CollideWithBaddie(hero *Hero, baddie *Baddie)
@@ -281,6 +353,30 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
     Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
     Memory->Scene->Hero.Radius, 32);
 	GlobalDebugTools->DrawLine(RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y);
+
+  vector RandomPoint3;
+  RandomPoint3.X = Memory->Scene->Hero.Position.X;
+  RandomPoint3.Y = Memory->Scene->Hero.Position.Y;
+  vector RandomPoint4;
+  RandomPoint4.X = RandomPoint3.X;
+  RandomPoint4.Y = RandomPoint3.Y + 100;
+
+  GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
+  GlobalDebugTools->SetColor(255, 255, 255, 255);
+  CollisionVector = {};
+  
+  if(FillCollisionVectorLineToLine(
+    &CollisionVector,
+    RandomPoint1.X, RandomPoint1.Y,
+    RandomPoint2.X, RandomPoint2.Y,
+    RandomPoint3.X, RandomPoint3.Y,
+    RandomPoint4.X, RandomPoint4.Y))
+  {
+    GlobalDebugTools->DrawLine(
+      RandomPoint4.X, RandomPoint4.Y,
+      CollisionVector.X,
+      CollisionVector.Y);
+  }
 }
 
 extern "C"
