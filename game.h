@@ -14,7 +14,7 @@ struct vector
 
 struct button_state
 {
-	bool IsDownLastState;
+	bool IsDownLastFrame;
 	uint32_t Duration;
 	bool IsDown;
 };
@@ -32,13 +32,15 @@ struct controller_state
 
 	union
 	{
-		button_state Buttons[4];
+		button_state Buttons[6];
 		struct
 		{
 			button_state Up;
 			button_state Down;
 			button_state Left;
 			button_state Right;
+      button_state RightBumper;
+      button_state LeftBumper;
 		};
 	};
 };
@@ -55,14 +57,28 @@ struct baddie
 	float Angle;
 };
 
+enum dagger_state {
+  FIRED, STUCK, RETURNING, RESTING
+};
+
+struct dagger
+{
+  vector Position;
+  vector Velocity;
+
+  dagger_state State;
+};
+
 struct hero
 {
 	vector Position;
   vector Velocity;
-	int CurrentPathIndex;
+  int CurrentPathIndex;
 	float DirectionFacing;
 	float Radius;
 	float HalfHeight;
+   
+  dagger Dagger;
 };
 
 struct scene

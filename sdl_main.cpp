@@ -301,6 +301,7 @@ main(int argc, char* args[])
 								}
 							} break;
 						}
+
 					}
 				} break;
 				case SDL_CONTROLLERBUTTONDOWN:
@@ -319,24 +320,28 @@ main(int argc, char* args[])
 						{
 							case SDL_CONTROLLER_BUTTON_DPAD_UP:
 							{
-								Controller->Up.IsDownLastState = Controller->Up.IsDown;
 								Controller->Up.IsDown = IsDown;
 							} break;
 							case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
 							{
-								Controller->Down.IsDownLastState = Controller->Down.IsDown;
 								Controller->Down.IsDown = IsDown;
 							} break;
 							case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
 							{
-								Controller->Left.IsDownLastState = Controller->Left.IsDown;
 								Controller->Left.IsDown = IsDown;
 							} break;
 							case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
 							{
-								Controller->Right.IsDownLastState = Controller->Right.IsDown;
 								Controller->Right.IsDown = IsDown;
 							} break;
+              case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+              {
+                Controller->LeftBumper.IsDown = IsDown;
+              } break;
+              case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+              {
+                Controller->RightBumper.IsDown = IsDown;
+              } break;
 						}
 					}
 				} break;
@@ -354,22 +359,18 @@ main(int argc, char* args[])
 					{
 						case SDL_SCANCODE_UP:
 						{
-							Controller->Up.IsDownLastState = Controller->Up.IsDown;
 							Controller->Up.IsDown = IsDown;
 						} break;
 						case SDL_SCANCODE_DOWN:
 						{
-							Controller->Down.IsDownLastState = Controller->Down.IsDown;
 							Controller->Down.IsDown = IsDown;
 						} break;
 						case SDL_SCANCODE_LEFT:
 						{
-							Controller->Left.IsDownLastState = Controller->Left.IsDown;
 							Controller->Left.IsDown = IsDown;
 						} break;
 						case SDL_SCANCODE_RIGHT:
 						{
-							Controller->Right.IsDownLastState = Controller->Right.IsDown;
 							Controller->Right.IsDown = IsDown;
 						} break;
 					}
@@ -380,8 +381,17 @@ main(int argc, char* args[])
 		GameFunctions.UpdateAndRenderGame(&GameMemory, Dt);
 		SDL_RenderPresent(GlobalRenderer);
 
+    controller_state *Controller = &Input.Controllers[0];
+    for(Controller)
+    Controller->Up.IsDownLastFrame = Controller->Up.IsDown;
+    Controller->Down.IsDownLastFrame = Controller->Down.IsDown;
+    Controller->Left.IsDownLastFrame = Controller->Left.IsDown;
+    Controller->Right.IsDownLastFrame = Controller->Right.IsDown;
+    Controller->LeftBumper.IsDownLastFrame = Controller->LeftBumper.IsDown;
+    Controller->RightBumper.IsDownLastFrame = Controller->RightBumper.IsDown;
+
 		SDL_Delay(1);
-	}
+  }
 
   UnloadGameFunctions(&GameFunctions);
 

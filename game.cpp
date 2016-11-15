@@ -255,11 +255,6 @@ FillCollisionVectorCircleToLineWithVelocity(
   CirclePathEnd.X = CirclePathStart.X + CircleDirection.X * CircleR * 2;
   CirclePathEnd.Y = CirclePathStart.Y + CircleDirection.Y * CircleR * 2;
 
-  GlobalDebugTools->SetColor(0, 0, 0, 255);
-  GlobalDebugTools->DrawLine(
-    CirclePathStart.X, CirclePathStart.Y,
-    CirclePathEnd.X, CirclePathEnd.Y);
-
   if(FillCollisionVectorCircleToLine(
     CollisionVector,
     CircleX, CircleY,
@@ -270,7 +265,7 @@ FillCollisionVectorCircleToLineWithVelocity(
     return true;
   }
 
-  if (FillCollisionVectorCircleToLine(
+  if(FillCollisionVectorCircleToLine(
     CollisionVector,
     CircleX + CircleVX, CircleY + CircleVY,
     CircleR,
@@ -352,8 +347,8 @@ ProcessControllerMovement(controller_state *Controller, vector *Movement)
 		Y = Y / Magnitude;
 	}
 
-	Movement->X = X;
-	Movement->Y = Y;
+  Movement->X = X;
+  Movement->Y = Y;
 }
 
 internal void
@@ -370,17 +365,94 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 		Hero->DirectionFacing = atan2f(InputMovement.Y, InputMovement.X) * RAD2DEG_CONSTANT;
 }
 
+internal void
+ProcessDagger(dagger *Dagger, hero *Hero, float Dt)
+{
+  switch (Dagger->State)
+  {
+    case FIRED:
+    {
+      Dagger->Position.X += Dagger->Velocity.X * Dt;
+      Dagger->Position.Y += Dagger->Velocity.Y * Dt;
+
+      if ( Dagger->Position.X < 0 || Dagger->Position.X > SCREEN_WIDTH
+        || Dagger->Position.Y < 0 || Dagger->Position.Y > SCREEN_HEIGHT)
+      {
+        Dagger->State = STUCK;
+      }
+    } break;
+    case STUCK:
+    {
+    } break;
+    case RETURNING:
+    {
+      vector Direction;
+      Direction.X = Hero->Position.X - Dagger->Position.X;
+      Direction.Y = Hero->Position.Y - Dagger->Position.Y;
+      NormalizeVector(&Direction, &Direction);
+
+      Dagger->Velocity.X = Direction.X * 900;
+      Dagger->Velocity.Y = Direction.Y * 900;
+      
+      if(GetDistanceBetweenPoints(
+        Dagger->Position.X, Dagger->Position.Y,
+        Hero->Position.X, Hero->Position.Y) < 720 * Dt)
+      {
+        Dagger->Position.X = Hero->Position.X;
+        Dagger->Position.Y = Hero->Position.Y;
+        Dagger->State = RESTING;
+      }
+      else
+      {
+        Dagger->Position.X += Dagger->Velocity.X * Dt;
+        Dagger->Position.Y += Dagger->Velocity.Y * Dt;
+      }
+    } break;
+    case RESTING:
+    {
+      Dagger->Position.X = Hero->Position.X;
+      Dagger->Position.Y = Hero->Position.Y;
+    } break;
+  }
+}
+
+internal void
+ProcessPlayerAction(hero *Hero, input_state *Input, float Dt)
+{
+  if(Input->Controllers->RightBumper.IsDown && !Input->Controllers->RightBumper.IsDownLastFrame)
+  {
+    if(Hero->Dagger.State == RESTING)
+    {
+      Hero->Dagger.Velocity.X = 800 * cosf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
+      Hero->Dagger.Velocity.Y = 800 * sinf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
+      Hero->Dagger.State = FIRED;
+    }
+  }
+ 
+  if (Input->Controllers->LeftBumper.IsDown)
+  {
+    if(Hero->Dagger.State == STUCK)
+    {
+      Hero->Dagger.State = RETURNING;
+    }
+  }
+}
+
 extern "C"
 UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 {
-  GlobalDebugTools->SetColor(255, 255, 0, 255);
+  GlobalDebugTools->SetColor(255, 0, 0, 255);
   GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-  GlobalDebugTools->SetColor(0, 255, 0, 255);
+  GlobalDebugTools->SetColor(255, 255, 0, 255);
   GlobalDebugTools->FillBox(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
     SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
 	MovePlayer(&Memory->Scene->Hero, Memory->Input, Dt);
+  ProcessPlayerAction(&Memory->Scene->Hero, Memory->Input, Dt);
+  ProcessDagger(&Memory->Scene->Hero.Dagger, 
+    &Memory->Scene->Hero, Dt);
+
 	for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
 	{
 		BaddieMovement(&Memory->Scene->Baddies[BaddieIndex], Dt);
@@ -417,60 +489,80 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
   Memory->Scene->Hero.Position.X += Memory->Scene->Hero.Velocity.X;
   Memory->Scene->Hero.Position.Y += Memory->Scene->Hero.Velocity.Y;
   
+  if (IsPointLeftHandToLine(
+    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
+    RandomPoint1.X, RandomPoint1.Y,
+    RandomPoint2.X, RandomPoint2.Y))
+  {
+    GlobalDebugTools->SetColor(255, 0, 255, 255);
+  }
+  else
+  {
+    GlobalDebugTools->SetColor(0, 0, 255, 255);
+  }
+  GlobalDebugTools->DrawCircle(
+    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
+    Memory->Scene->Hero.Radius, 32);
+
 	GlobalDebugTools->SetColor(0, 0, 255, 255);
 	for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
 	{
 		RenderBaddie(&Memory->Scene->Baddies[BaddieIndex]);
 	}
 
-	GlobalDebugTools->DrawTriangle(
+  GlobalDebugTools->DrawTriangle(
     Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
 		Memory->Scene->Hero.DirectionFacing,
 	  Memory->Scene->Hero.HalfHeight);
-	GlobalDebugTools->DrawCircle(
-    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
-    Memory->Scene->Hero.Radius, 32);
-	GlobalDebugTools->DrawLine(RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y);
+	
+  GlobalDebugTools->DrawLine(RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y);
 
   vector RandomPoint3;
   RandomPoint3.X = Memory->Scene->Hero.Position.X;
-  RandomPoint3.Y = Memory->Scene->Hero.Position.Y - 60;
+  RandomPoint3.Y = Memory->Scene->Hero.Position.Y;
+  
+  vector HeroDirection;
+  HeroDirection.X = cosf(Memory->Scene->Hero.DirectionFacing * DEG2RAD_CONSTANT);
+  HeroDirection.Y = sinf(Memory->Scene->Hero.DirectionFacing * DEG2RAD_CONSTANT);
+  
   vector RandomPoint4;
-  RandomPoint4.X = RandomPoint3.X;
-  RandomPoint4.Y = RandomPoint3.Y + 120;
-
-  GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
+  RandomPoint4.X = RandomPoint3.X + HeroDirection.X * 60;
+  RandomPoint4.Y = RandomPoint3.Y + HeroDirection.Y * 60;
+  
   CollisionVector = {};
   
-  if(FillCollisionVectorLineToLine(
+  if (FillCollisionVectorLineToLine(
     &CollisionVector,
     RandomPoint3.X, RandomPoint3.Y,
     RandomPoint4.X, RandomPoint4.Y,
     RandomPoint1.X, RandomPoint1.Y,
     RandomPoint2.X, RandomPoint2.Y))
   {
-    GlobalDebugTools->SetColor(255, 255, 255, 255);
 
     vector Point;
     Point.X = RandomPoint3.X - CollisionVector.X;
     Point.Y = RandomPoint3.Y - CollisionVector.Y;
 
-    if(IsPointLeftHandToLine(
-      Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
-      RandomPoint1.X, RandomPoint1.Y,
-      RandomPoint2.X, RandomPoint2.Y))
-    {
-      GlobalDebugTools->DrawLine(
-        RandomPoint4.X, RandomPoint4.Y,
-        Point.X, Point.Y);
-    }
-    else
-    {
-      GlobalDebugTools->DrawLine(
-        RandomPoint3.X, RandomPoint3.Y,
-        Point.X, Point.Y);
-    }
+    GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, Point.X, Point.Y);
+
+    GlobalDebugTools->SetColor(255, 255, 255, 255);
+
+    GlobalDebugTools->DrawLine(
+      RandomPoint4.X, RandomPoint4.Y,
+      Point.X, Point.Y);    
   }
+  else
+  {
+    GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
+  }
+
+  GlobalDebugTools->SetColor(255, 255, 255, 255);
+  GlobalDebugTools->DrawCircle(
+    Memory->Scene->Hero.Dagger.Position.X,
+    Memory->Scene->Hero.Dagger.Position.Y,
+    16,
+    12
+  );
 }
 
 extern "C"
@@ -492,6 +584,7 @@ LOAD_GAME(LoadGame)
   Baddie.Position.X += SCREEN_WIDTH / 4;
   AddBaddieToScene(&Baddie, Scene);
 
+  Scene->Hero.Dagger.State = RESTING;
   Scene->Hero.Position.X = SCREEN_WIDTH / 4;
   Scene->Hero.Position.Y = SCREEN_HEIGHT / 4;
   Scene->Hero.DirectionFacing = 0;
