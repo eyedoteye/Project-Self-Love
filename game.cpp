@@ -384,8 +384,8 @@ ProcessDagger(dagger *Dagger, hero *Hero, float Dt)
     } break;
     case STUCK:
     {
-      Dagger->Velocity.X /= 1.1f;
-      Dagger->Velocity.Y /= 1.1f;
+      Dagger->Velocity.X /= 1.05f;
+      Dagger->Velocity.Y /= 1.05f;
       if(Dagger->BaddieStuckTo != NULL)
       {
         Dagger->BaddieStuckTo->Position.X += Dagger->Velocity.X * Dt;
@@ -411,6 +411,7 @@ ProcessDagger(dagger *Dagger, hero *Hero, float Dt)
         Dagger->Position.X = Hero->Position.X;
         Dagger->Position.Y = Hero->Position.Y;
         Dagger->State = RESTING;
+        Dagger->LastBattleChoice = NONE;
       }
       else
       {
@@ -464,6 +465,7 @@ CollideDaggerWithBaddie(dagger* Dagger, baddie* Baddie, game_memory *Memory)
     Dagger->State = STUCK;
     Dagger->BaddieStuckTo = Baddie;
     Memory->GameState = BATTLESCREEN;
+    Memory->BattleScreenTimer = 10;
   }
 }
 
@@ -476,23 +478,34 @@ internal void WarpToBaddie(hero *Hero)
 {
   Hero->Position.X = Hero->Dagger.BaddieStuckTo->Position.X;
   Hero->Position.Y = Hero->Dagger.BaddieStuckTo->Position.Y;
-  Hero->Dagger.State = RESTING;
+  Hero->Dagger.LastBattleChoice = WARPTO;
 }
 
 internal void
 ProcessPlayerBattleAction(hero* Hero, input_state *Input, game_memory *Memory, float Dt)
 {
   if (Input->Controllers[0].LeftBumper.IsDown && !Hero->LeftBumperNotReleased)
-  {
+  { 
     PullDaggerBack(Hero);
     Hero->LeftBumperNotReleased = true;
     Memory->GameState = INGAME;
   }
   else if (Input->Controllers[0].RightBumper.IsDown && !Hero->RightBumperNotReleased)
   {
-    WarpToBaddie(Hero);
+    switch (Memory->Scene->Hero.Dagger.LastBattleChoice)
+    {
+      case WARPTO:
+      {
+        Hero->Dagger.Velocity.X = 800 * cosf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
+        Hero->Dagger.Velocity.Y = 800 * sinf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
+        Memory->GameState = INGAME;
+      } break;
+      case NONE:
+      {
+        WarpToBaddie(Hero);
+      } break;
+    }
     Hero->RightBumperNotReleased = true;
-    Memory->GameState = INGAME;
   }
 }
 
@@ -501,6 +514,12 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 {
   if (Memory->GameState == BATTLESCREEN)
   {
+    Memory->BattleScreenTimer -= Dt;
+    if (Memory->BattleScreenTimer <= 0)
+    {
+      Memory->GameState = INGAME;
+      PullDaggerBack(&Memory->Scene->Hero);
+    }
     Dt *= 0.03f;
     ProcessPlayerBattleAction(&Memory->Scene->Hero, Memory->Input, Memory, Dt);
   }
@@ -520,12 +539,12 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 
   if(Memory->GameState == BATTLESCREEN)
   {
-    GlobalDebugTools->SetColor(255, 0, 0, 255);
+    GlobalDebugTools->SetColor((int)(255 * Memory->BattleScreenTimer/10.f), 0, 0, 255);
     GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   }
   else
   {
-    GlobalDebugTools->SetColor(255, 255, 0, 255);
+    GlobalDebugTools->SetColor(155, 200, 0, 255);
     GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     GlobalDebugTools->SetColor(0, 255, 0, 255);

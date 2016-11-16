@@ -61,6 +61,10 @@ enum dagger_state {
   FIRED, STUCK, RETURNING, RESTING
 };
 
+enum battle_choice {
+  WARPTO, PULLBACK, NONE
+};
+
 struct dagger
 {
   vector Position;
@@ -70,6 +74,7 @@ struct dagger
   baddie *BaddieStuckTo;
 
   dagger_state State;
+  battle_choice LastBattleChoice;
 };
 
 struct hero
@@ -159,6 +164,8 @@ struct game_memory
   game_state GameState;
   scene *Scene;
   input_state *Input;
+
+  float BattleScreenTimer;
 };
 
 #define LOAD_GAME(name) void name(game_memory *Memory, debug_tools *DebugTools)
