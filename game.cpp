@@ -444,7 +444,7 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
   GlobalDebugTools->SetColor(255, 0, 0, 255);
   GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-  GlobalDebugTools->SetColor(255, 255, 0, 255);
+  GlobalDebugTools->SetColor(0, 255, 0, 255);
   GlobalDebugTools->FillBox(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
     SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 

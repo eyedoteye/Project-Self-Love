@@ -381,14 +381,17 @@ main(int argc, char* args[])
 		GameFunctions.UpdateAndRenderGame(&GameMemory, Dt);
 		SDL_RenderPresent(GlobalRenderer);
 
-    controller_state *Controller = &Input.Controllers[0];
-    for(Controller)
-    Controller->Up.IsDownLastFrame = Controller->Up.IsDown;
-    Controller->Down.IsDownLastFrame = Controller->Down.IsDown;
-    Controller->Left.IsDownLastFrame = Controller->Left.IsDown;
-    Controller->Right.IsDownLastFrame = Controller->Right.IsDown;
-    Controller->LeftBumper.IsDownLastFrame = Controller->LeftBumper.IsDown;
-    Controller->RightBumper.IsDownLastFrame = Controller->RightBumper.IsDown;
+    controller_state *Controller;
+    for(int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ControllerIndex++)
+    {
+      Controller = &Input.Controllers[ControllerIndex];
+      Controller->Up.IsDownLastFrame = Controller->Up.IsDown;
+      Controller->Down.IsDownLastFrame = Controller->Down.IsDown;
+      Controller->Left.IsDownLastFrame = Controller->Left.IsDown;
+      Controller->Right.IsDownLastFrame = Controller->Right.IsDown;
+      Controller->LeftBumper.IsDownLastFrame = Controller->LeftBumper.IsDown;
+      Controller->RightBumper.IsDownLastFrame = Controller->RightBumper.IsDown;
+    }
 
 		SDL_Delay(1);
   }
