@@ -233,7 +233,8 @@ main(int argc, char* args[])
     BasePath, BasePathLength);
   strncpy(FilePath + BasePathLength,
     "game.dll", sizeof("game.dll"));
-  while(GlobalRunning) {
+  while(GlobalRunning)
+  {
 		Dt = (SDL_GetTicks() - LastTime) / 1000.f;
 		LastTime = SDL_GetTicks();
 

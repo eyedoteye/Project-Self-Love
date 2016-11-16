@@ -65,6 +65,9 @@ struct dagger
 {
   vector Position;
   vector Velocity;
+  float Radius;
+
+  baddie *BaddieStuckTo;
 
   dagger_state State;
 };
@@ -77,6 +80,8 @@ struct hero
 	float DirectionFacing;
 	float Radius;
 	float HalfHeight;
+  bool RightBumperNotReleased;
+  bool LeftBumperNotReleased;
    
   dagger Dagger;
 };
@@ -145,8 +150,13 @@ struct debug_tools
 };
 global_variable debug_tools *GlobalDebugTools;
 
+enum game_state {
+  INGAME, BATTLESCREEN
+};
+
 struct game_memory
 {
+  game_state GameState;
   scene *Scene;
   input_state *Input;
 };
