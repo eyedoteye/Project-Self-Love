@@ -148,6 +148,12 @@ FillCollisionVectorCircleToLine(
 	);
 }
 
+internal int
+GetVectorMagnitude(vector *Input)
+{
+  return sqrtf(Input->X * Input->X + Input->Y * Input->Y);
+}
+
 internal void
 NormalizeVector(vector *Output, vector *Input)
 {
