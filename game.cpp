@@ -392,6 +392,10 @@ ProcessDagger(dagger *Dagger, hero *Hero, float Dt)
     {
       Dagger->Velocity.X /= 1.05f;
       Dagger->Velocity.Y /= 1.05f;
+      if (Dagger->LastBattleChoice==PUSH && Dagger->Velocity.X*Dagger->Velocity.X + Dagger->Velocity.Y*Dagger->Velocity.Y < .3)
+      {
+        Dagger->State = RETURNING;
+      }
       if(Dagger->BaddieStuckTo != NULL)
       {
         Dagger->BaddieStuckTo->Position.X += Dagger->Velocity.X * Dt;
@@ -436,7 +440,7 @@ ProcessDagger(dagger *Dagger, hero *Hero, float Dt)
 internal void
 ProcessPlayerAction(hero *Hero, input_state *Input, float Dt)
 {
-  if(Input->Controllers[0].RightBumper.IsDown && !Input->Controllers[0].RightBumper.IsDownLastFrame)
+  if(Input->Controllers[0].RightBumper.IsDown && Input->Controllers[0].RightBumper.WasReleasedSinceLastAction)
   {
     if(Hero->Dagger.State == RESTING)
     {
@@ -445,16 +449,16 @@ ProcessPlayerAction(hero *Hero, input_state *Input, float Dt)
       Hero->Dagger.State = FIRED;
      
     }
-    Hero->RightBumperNotReleased = true;
+    Input->Controllers[0].RightBumper.WasReleasedSinceLastAction = false;
   }
  
-  if (Input->Controllers[0].LeftBumper.IsDown && !Hero->LeftBumperNotReleased)
+  if (Input->Controllers[0].LeftBumper.IsDown && Input->Controllers[0].RightBumper.WasReleasedSinceLastAction)
   {
     if(Hero->Dagger.State == STUCK)
     {
       Hero->Dagger.State = RETURNING;
     }
-    Hero->LeftBumperNotReleased = true;
+    Input->Controllers[0].LeftBumper.WasReleasedSinceLastAction = false;
   }
 }
 
@@ -490,13 +494,13 @@ internal void WarpToBaddie(hero *Hero)
 internal void
 ProcessPlayerBattleAction(hero* Hero, input_state *Input, game_memory *Memory, float Dt)
 {
-  if (Input->Controllers[0].LeftBumper.IsDown && !Hero->LeftBumperNotReleased)
+  if (Input->Controllers[0].LeftBumper.IsDown && Input->Controllers[0].LeftBumper.WasReleasedSinceLastAction)
   { 
     PullDaggerBack(Hero);
-    Hero->LeftBumperNotReleased = true;
+    Input->Controllers[0].LeftBumper.WasReleasedSinceLastAction = false;
     Memory->GameState = INGAME;
   }
-  else if (Input->Controllers[0].RightBumper.IsDown && !Hero->RightBumperNotReleased)
+  else if (Input->Controllers[0].RightBumper.IsDown && Input->Controllers[0].RightBumper.WasReleasedSinceLastAction)
   {
     switch (Memory->Scene->Hero.Dagger.LastBattleChoice)
     {
@@ -504,14 +508,16 @@ ProcessPlayerBattleAction(hero* Hero, input_state *Input, game_memory *Memory, f
       {
         Hero->Dagger.Velocity.X = 800 * cosf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
         Hero->Dagger.Velocity.Y = 800 * sinf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
+        Hero->Dagger.LastBattleChoice = PUSH;
         Memory->GameState = INGAME;
       } break;
       case NONE:
       {
+        Memory->BattleScreenTimer = 10;
         WarpToBaddie(Hero);
       } break;
     }
-    Hero->RightBumperNotReleased = true;
+    Input->Controllers[0].RightBumper.WasReleasedSinceLastAction = false;
   }
 }
 
@@ -534,15 +540,6 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
     ProcessPlayerAction(&Memory->Scene->Hero, Memory->Input, Dt);
   }
   
-  if (!Memory->Input->Controllers[0].RightBumper.IsDown)
-  {
-    Memory->Scene->Hero.RightBumperNotReleased = false;
-  }
-  if (!Memory->Input->Controllers[0].LeftBumper.IsDown)
-  {
-    Memory->Scene->Hero.LeftBumperNotReleased = false;
-  }
-
   if(Memory->GameState == BATTLESCREEN)
   {
     GlobalDebugTools->SetColor((int)(255 * Memory->BattleScreenTimer/10.f), 0, 0, 255);
@@ -550,7 +547,7 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
   }
   else
   {
-    GlobalDebugTools->SetColor(155, 200, 0, 255);
+    GlobalDebugTools->SetColor(0, 200, 0, 255);
     GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     GlobalDebugTools->SetColor(0, 255, 0, 255);

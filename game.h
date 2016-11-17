@@ -12,9 +12,11 @@ struct vector
 	float Y;
 };
 
+// Note (sigmasleep): WasReleasedSinceLastAction is set true by game layer,
+// and false by api layer.
 struct button_state
 {
-	bool IsDownLastFrame;
+	bool WasReleasedSinceLastAction;
 	uint32_t Duration;
 	bool IsDown;
 };
@@ -62,7 +64,7 @@ enum dagger_state {
 };
 
 enum battle_choice {
-  WARPTO, PULLBACK, NONE
+  WARPTO, PULLBACK, NONE, PUSH
 };
 
 struct dagger
