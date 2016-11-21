@@ -1,4 +1,5 @@
 #include "game.h"
+
 internal float
 GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)
 {
@@ -462,29 +463,56 @@ ProcessPlayerAction(hero *Hero, input_state *Input, float Dt)
   }
 }
 
-internal void
-CollideDaggerWithBaddie(dagger* Dagger, baddie* Baddie, game_memory *Memory)
+internal
+RESOLVE_COLLISION(ResolveDaggerCollision)
 {
-  vector Collision;
+  game_memory *Memory = (game_memory *)_Memory;
+  dagger *Dagger = (dagger *)This;
+  switch (OtherType)
+  {
+    case BADDIE:
+    {
+      Dagger->State = STUCK;
+      Dagger->BaddieStuckTo = (baddie *)Other;
+      Memory->GameState = BATTLESCREEN;
+      Memory->BattleScreenTimer = 10;
+    } break;
+    default:
+    {
+      // Todo(sigmasleep): Log this.
+    } break;
+  }
+}
+
+internal void
+CheckDaggerCollision(dagger* Dagger, baddie* Baddie, game_memory *Memory)
+{
+  vector CollisionVector;
   if(Dagger->State == FIRED && FillCollisionVectorCircleToCircle(
-    &Collision,
+    &CollisionVector,
     Dagger->Position.X, Dagger->Position.Y, Dagger->Radius,
     Baddie->Position.X, Baddie->Position.Y, Baddie->Radius
   ))
   {
-    Dagger->State = STUCK;
-    Dagger->BaddieStuckTo = Baddie;
-    Memory->GameState = BATTLESCREEN;
-    Memory->BattleScreenTimer = 10;
+    collision *Collision = &Memory->Collisions[Memory->CollisionsSize];
+    
+    Collision->Resolver = ResolveDaggerCollision;
+    Collision->This = (void *)Dagger;
+    Collision->Other = (void *)Baddie;
+    Collision->OtherType = BADDIE;
+    
+    ++Memory->CollisionsSize;
   }
 }
 
-internal void PullDaggerBack(hero *Hero)
+internal void
+PullDaggerBack(hero *Hero)
 {
   Hero->Dagger.State = RETURNING;
 }
 
-internal void WarpToBaddie(hero *Hero)
+internal void
+WarpToBaddie(hero *Hero)
 {
   Hero->Position.X = Hero->Dagger.BaddieStuckTo->Position.X;
   Hero->Position.Y = Hero->Dagger.BaddieStuckTo->Position.Y;
@@ -647,49 +675,116 @@ RenderDebugArt(game_memory *Memory)
   );
 }
 
-extern "C"
-UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
+/*
+UpdateGame(game_memory Memory, float Dt)
 {
-  if (Memory->GameState == BATTLESCREEN)
-  {
-    Memory->BattleScreenTimer -= Dt;
-    if (Memory->BattleScreenTimer <= 0)
-    {
-      Memory->GameState = INGAME;
-      PullDaggerBack(&Memory->Scene->Hero);
-    }
-    Dt *= 0.03f;
-    ProcessPlayerBattleAction(&Memory->Scene->Hero, Memory->Input, Memory, Dt);
-  }
-  else
-  {
-    ProcessPlayerAction(&Memory->Scene->Hero, Memory->Input, Dt);
-  }
-
   MovePlayer(&Memory->Scene->Hero, Memory->Input, Dt);
-  ProcessDagger(&Memory->Scene->Hero.Dagger, 
+  ProcessDagger(&Memory->Scene->Hero.Dagger,
     &Memory->Scene->Hero, Dt);
-
+  
   if (Memory->GameState == BATTLESCREEN)
   {
-    BaddieMovement(Memory->Scene->Hero.Dagger.BaddieStuckTo, Dt);
     CollideWithBaddie(&Memory->Scene->Hero, Memory->Scene->Hero.Dagger.BaddieStuckTo);
   }
   else
   {
-    for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
-	  {
-		  BaddieMovement(&Memory->Scene->Baddies[BaddieIndex], Dt);
-	  }
-
-	  // Note(sigmasleep): Seperate loops because movement updates should occur before collisions
-	  for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
-	  {
-		  CollideWithBaddie(&Memory->Scene->Hero, &Memory->Scene->Baddies[BaddieIndex]);
+    for (int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
+    {
+      CollideWithBaddie(&Memory->Scene->Hero, &Memory->Scene->Baddies[BaddieIndex]);
       CollideDaggerWithBaddie(&Memory->Scene->Hero.Dagger, &Memory->Scene->Baddies[BaddieIndex], Memory);
-	  }
+    }
+  }
+}
+*/
+
+internal void
+ProcessLogics(game_memory *Memory, float Dt)
+{
+  switch (Memory->GameState)
+  {
+    case BATTLESCREEN:
+    {
+      Memory->TimeSpeed = 0.03f;
+      Memory->BattleScreenTimer -= Dt;
+      if (Memory->BattleScreenTimer <= 0)
+      {
+        Memory->GameState = INGAME;
+        PullDaggerBack(&Memory->Scene->Hero);
+      }
+      ProcessPlayerBattleAction(&Memory->Scene->Hero, Memory->Input, Memory, Dt * Memory->TimeSpeed);
+      BaddieMovement(Memory->Scene->Hero.Dagger.BaddieStuckTo, Dt * Memory->TimeSpeed);
+    } break;
+    case INGAME:
+    {
+      Memory->TimeSpeed = 1.f;
+      ProcessPlayerAction(&Memory->Scene->Hero, Memory->Input, Dt);
+      for (int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
+      {
+        BaddieMovement(&Memory->Scene->Baddies[BaddieIndex], Dt);
+      }
+    } break;
   }
 
+  MovePlayer(&Memory->Scene->Hero, Memory->Input, Dt * Memory->TimeSpeed);
+  ProcessDagger(&Memory->Scene->Hero.Dagger,
+                &Memory->Scene->Hero, Dt * Memory->TimeSpeed);
+}
+
+internal void
+ProcessPostCollisionLogics(game_memory *Memory, float Dt)
+{
+
+}
+
+internal void
+CheckCollisions(game_memory *Memory, float Dt)
+{
+  if(Memory->GameState == BATTLESCREEN)
+  {
+    CollideWithBaddie(&Memory->Scene->Hero, Memory->Scene->Hero.Dagger.BaddieStuckTo);
+  }
+  else
+  {
+    for (int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
+    {
+      CollideWithBaddie(&Memory->Scene->Hero, &Memory->Scene->Baddies[BaddieIndex]);
+      CheckDaggerCollision(&Memory->Scene->Hero.Dagger, &Memory->Scene->Baddies[BaddieIndex], Memory);
+    }
+  }
+}
+
+internal void
+ResolveCollisions(game_memory *Memory)
+{
+  for (int CollisionIndex = 0; CollisionIndex < Memory->CollisionsSize; ++CollisionIndex)
+  {
+    collision *Collision = &Memory->Collisions[CollisionIndex];
+    resolve_collision *Resolve = Collision->Resolver;
+    Resolve(Memory, Collision->This, Collision->Other, Collision->OtherType, &Collision->CollisionVector);
+  }
+}
+
+// Todo(sigmasleep) Store these in entities?
+#define PROCESS_ENTITY_LOGIC(name) void name(game_memory *Memory, float Dt)
+//#define CHECK_COLLISIONS(name) void name(game_memory *Memory) //create/throw away collision states each frame?
+#define PROCESS_ENTITY_POST_COLLISION_LOGIC(name) void name(game_memory *Memory, float Dt)
+//ProcessLogic can add a collision check to collider stack?
+
+//Recieves game_memory *Memory && float Dt
+extern "C"
+UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
+{
+  // Logic (void pointer that uses Dt, entity info, game state, and input state)
+  // CheckCollisions (void pointer that fills in collision info)
+  // MoveAndResolveCollisions (void pointers that use Dt and two info sets that store the collision information and entities involved)
+  // FramEndLogic (void pointer that uses Dt, entity info, game state, and input state)
+  Memory->CollisionsSize = 0;
+
+  ProcessLogics(Memory, Dt);
+  CheckCollisions(Memory, Dt);
+  ResolveCollisions(Memory);
+  ProcessPostCollisionLogics(Memory, Dt);
+  //UpdateGame(Memory, Dt);
   RenderDebugArt(Memory);
 }
 

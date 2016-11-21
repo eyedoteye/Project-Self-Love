@@ -59,6 +59,10 @@ struct baddie
 	float Angle;
 };
 
+enum entity_type {
+  HERO, BADDIE, DAGGER
+};
+
 enum dagger_state {
   FIRED, STUCK, RETURNING, RESTING
 };
@@ -98,6 +102,39 @@ struct scene
 	hero Hero;
 	baddie Baddies[255];
 	int BaddieCount;
+};
+
+enum game_state
+{
+  INGAME, BATTLESCREEN
+};
+
+#define RESOLVE_COLLISION(name) void name(void *_Memory, void *This, void *Other, entity_type OtherType, vector *CollisionVector)
+typedef RESOLVE_COLLISION(resolve_collision);
+
+struct collision
+{
+  resolve_collision *Resolver;
+
+  void* This;
+  void* Other;
+  entity_type OtherType;
+
+  vector CollisionVector;
+};
+
+struct game_memory
+{
+  game_state GameState;
+  scene *Scene;
+  input_state *Input;
+
+  collision Collisions[100];
+  int CollisionsSize;
+
+  float Dt;
+  float TimeSpeed;
+  float BattleScreenTimer;
 };
 
 // Note(sigmasleep): Should be provided by platform layer.
@@ -156,19 +193,6 @@ struct debug_tools
   debug_set_color *SetColor;
 };
 global_variable debug_tools *GlobalDebugTools;
-
-enum game_state {
-  INGAME, BATTLESCREEN
-};
-
-struct game_memory
-{
-  game_state GameState;
-  scene *Scene;
-  input_state *Input;
-
-  float BattleScreenTimer;
-};
 
 #define LOAD_GAME(name) void name(game_memory *Memory, debug_tools *DebugTools)
 typedef LOAD_GAME(load_game);
