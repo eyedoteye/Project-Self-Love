@@ -14,10 +14,11 @@ struct vector
 
 // Note (sigmasleep): WasReleasedSinceLastAction is set true by game layer,
 // and false by api layer.
+// WasReleasedSinceLastAction should be set to TRUE at game start.
 struct button_state
 {
+  uint32_t Duration;
 	bool WasReleasedSinceLastAction;
-	uint32_t Duration;
 	bool IsDown;
 };
 
@@ -34,7 +35,8 @@ struct controller_state
 
 	union
 	{
-		button_state Buttons[6];
+#define BUTTONCOUNT 6
+		button_state Buttons[BUTTONCOUNT];
 		struct
 		{
 			button_state Up;
@@ -43,7 +45,7 @@ struct controller_state
 			button_state Right;
       button_state RightBumper;
       button_state LeftBumper;
-		};
+    };
 	};
 };
 

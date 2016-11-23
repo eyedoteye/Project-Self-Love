@@ -227,6 +227,16 @@ main(int argc, char* args[])
   float Dt;
   game_memory GameMemory;
   input_state Input = {};
+  
+  for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ++ControllerIndex)
+  {
+    controller_state *Controller = &Input.Controllers[ControllerIndex];
+    for (int ButtonIndex = 0; ButtonIndex < BUTTONCOUNT; ++ButtonIndex)
+    {
+      Controller->Buttons[ButtonIndex].WasReleasedSinceLastAction = true;
+    }
+  }
+
   scene Scene = {};
   GameMemory.Input = &Input;
   GameMemory.Scene = &Scene;

@@ -8,14 +8,15 @@ GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)
 	return sqrtf(X * X + Y * Y);
 }
 
-internal float
-GetAngleBetweenPoints(float X1, float Y1, float X2, float Y2)
-{
-	float Y = Y2 - Y1;
-	float X = X2 - X1;
-
-	return atan2f(Y, X) * RAD2DEG_CONSTANT;
-}
+//
+//internal float
+//GetAngleBetweenPoints(float X1, float Y1, float X2, float Y2)
+//{
+//	float Y = Y2 - Y1;
+//	float X = X2 - X1;
+//
+//	return atan2f(Y, X) * RAD2DEG_CONSTANT;
+//}
 
 internal void
 AddBaddieToScene(baddie *Baddie, scene *Scene)
@@ -286,38 +287,6 @@ FillCollisionVectorCircleToLineWithVelocity(
 }
 
 internal void
-CollideWithBaddie(hero *Hero, baddie *Baddie)
-{
-	vector CollisionVector;
-
-	if(FillCollisionVectorCircleToCircle(&CollisionVector,
-	  Hero->Position.X, Hero->Position.Y, Hero->Radius,
-		Baddie->Position.X, Baddie->Position.Y, Baddie->Radius))
-	{
-		Baddie->Position.X += CollisionVector.X;
-		Baddie->Position.Y += CollisionVector.Y;
-	}
-
-	float X = Hero->Position.X + cosf(Hero->DirectionFacing * DEG2RAD_CONSTANT) * Hero->HalfHeight;
-	float Y = Hero->Position.Y + sinf(Hero->DirectionFacing * DEG2RAD_CONSTANT) * Hero->HalfHeight;
-
-	float Distance = GetDistanceBetweenPoints(
-		X, Y,
-		Baddie->Position.X, Baddie->Position.Y
-	);
-
-	if(Distance < Baddie->Radius)
-	{
-		float Direction = GetAngleBetweenPoints(
-			X, Y,
-			Baddie->Position.X, Baddie->Position.Y
-		);
-
-		Baddie->Angle = Direction;
-	}
-}
-
-internal void
 ProcessControllerMovement(controller_state *Controller, vector *Movement)
 {
 	float X = 0;
@@ -460,48 +429,6 @@ ProcessPlayerAction(hero *Hero, input_state *Input, float Dt)
       Hero->Dagger.State = RETURNING;
     }
     Input->Controllers[0].LeftBumper.WasReleasedSinceLastAction = false;
-  }
-}
-
-internal
-RESOLVE_COLLISION(ResolveDaggerCollision)
-{
-  game_memory *Memory = (game_memory *)_Memory;
-  dagger *Dagger = (dagger *)This;
-  switch (OtherType)
-  {
-    case BADDIE:
-    {
-      Dagger->State = STUCK;
-      Dagger->BaddieStuckTo = (baddie *)Other;
-      Memory->GameState = BATTLESCREEN;
-      Memory->BattleScreenTimer = 10;
-    } break;
-    default:
-    {
-      // Todo(sigmasleep): Log this.
-    } break;
-  }
-}
-
-internal void
-CheckDaggerCollision(dagger* Dagger, baddie* Baddie, game_memory *Memory)
-{
-  vector CollisionVector;
-  if(Dagger->State == FIRED && FillCollisionVectorCircleToCircle(
-    &CollisionVector,
-    Dagger->Position.X, Dagger->Position.Y, Dagger->Radius,
-    Baddie->Position.X, Baddie->Position.Y, Baddie->Radius
-  ))
-  {
-    collision *Collision = &Memory->Collisions[Memory->CollisionsSize];
-    
-    Collision->Resolver = ResolveDaggerCollision;
-    Collision->This = (void *)Dagger;
-    Collision->Other = (void *)Baddie;
-    Collision->OtherType = BADDIE;
-    
-    ++Memory->CollisionsSize;
   }
 }
 
@@ -736,18 +663,163 @@ ProcessPostCollisionLogics(game_memory *Memory, float Dt)
 
 }
 
+//internal void
+//CollideWithBaddie(hero *Hero, baddie *Baddie)
+//{
+//
+//}
+
+internal
+RESOLVE_COLLISION(ResolvePointerCollision)
+{
+  //game_memory *Memory = (game_memory *)_Memory;
+  //hero *Hero = (hero *)This;
+  baddie *Baddie = (baddie *)Other;
+
+  switch (OtherType)
+  {
+    case BADDIE:
+    {
+      Baddie->Angle = atan2f(CollisionVector->Y, CollisionVector->X);
+    } break;
+    default:
+    {
+      // Todo(sigmasleep): Log this.
+    } break;
+  }
+}
+
+// Todo(sigmasleep): Although this will be removed,
+// I should update the methods in here to use vector coords
+internal void
+CheckPointerCollision(hero* Hero, baddie* Baddie, game_memory *Memory)
+{
+  vector Direction;
+  Direction.X = cosf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
+  Direction.Y = sinf(Hero->DirectionFacing * DEG2RAD_CONSTANT);
+
+  vector PointerTipPosition;
+  PointerTipPosition.X = Hero->Position.X + Direction.X * Hero->HalfHeight;
+  PointerTipPosition.Y = Hero->Position.Y + Direction.Y * Hero->HalfHeight;
+
+  float Distance = GetDistanceBetweenPoints(
+    PointerTipPosition.X, PointerTipPosition.Y,
+    Baddie->Position.X, Baddie->Position.Y
+  );
+
+  if (Distance < Baddie->Radius)
+  {
+    collision *Collision = &Memory->Collisions[Memory->CollisionsSize];
+
+    Collision->Resolver = ResolvePointerCollision;
+    Collision->This = (void *)Hero;
+    Collision->Other = (void *)Baddie;
+    Collision->OtherType = BADDIE;
+    Collision->CollisionVector.X = Direction.X;
+    Collision->CollisionVector.Y = Direction.Y;
+
+    ++Memory->CollisionsSize;
+  }
+}
+
+internal
+RESOLVE_COLLISION(ResolveHeroCollision)
+{
+  //game_memory *Memory = (game_memory *)_Memory;
+  //hero *Hero = (hero *)This;
+  baddie *Baddie = (baddie *)Other;
+  switch (OtherType)
+  {
+    case BADDIE:
+    {    
+      Baddie->Position.X += CollisionVector->X;
+      Baddie->Position.Y += CollisionVector->Y;
+    } break;
+    default:
+    {
+      // Todo(sigmasleep): Log this.
+    } break;
+  }
+}
+
+internal void
+CheckHeroCollision(hero* Hero, baddie* Baddie, game_memory *Memory)
+{
+  vector CollisionVector;
+
+  if (FillCollisionVectorCircleToCircle(&CollisionVector,
+                                        Hero->Position.X, Hero->Position.Y, Hero->Radius,
+                                        Baddie->Position.X, Baddie->Position.Y, Baddie->Radius))
+  {
+    collision *Collision = &Memory->Collisions[Memory->CollisionsSize];
+
+    Collision->Resolver = ResolveHeroCollision;
+    Collision->This = (void *)Hero;
+    Collision->Other = (void *)Baddie;
+    Collision->OtherType = BADDIE;
+    Collision->CollisionVector.X = CollisionVector.X;
+    Collision->CollisionVector.Y = CollisionVector.Y;
+
+    ++Memory->CollisionsSize;
+  }
+}
+
+internal
+RESOLVE_COLLISION(ResolveDaggerCollision)
+{
+  game_memory *Memory = (game_memory *)_Memory;
+  dagger *Dagger = (dagger *)This;
+  switch (OtherType)
+  {
+    case BADDIE:
+    {
+      Dagger->State = STUCK;
+      Dagger->BaddieStuckTo = (baddie *)Other;
+      Memory->GameState = BATTLESCREEN;
+      Memory->BattleScreenTimer = 10;
+    } break;
+    default:
+    {
+      // Todo(sigmasleep): Log this.
+    } break;
+  }
+}
+
+internal void
+CheckDaggerCollision(dagger* Dagger, baddie* Baddie, game_memory *Memory)
+{
+  vector CollisionVector;
+  if (Dagger->State == FIRED && FillCollisionVectorCircleToCircle(
+    &CollisionVector,
+    Dagger->Position.X, Dagger->Position.Y, Dagger->Radius,
+    Baddie->Position.X, Baddie->Position.Y, Baddie->Radius
+  ))
+  {
+    collision *Collision = &Memory->Collisions[Memory->CollisionsSize];
+
+    Collision->Resolver = ResolveDaggerCollision;
+    Collision->This = (void *)Dagger;
+    Collision->Other = (void *)Baddie;
+    Collision->OtherType = BADDIE;
+
+    ++Memory->CollisionsSize;
+  }
+}
+
 internal void
 CheckCollisions(game_memory *Memory, float Dt)
 {
   if(Memory->GameState == BATTLESCREEN)
   {
-    CollideWithBaddie(&Memory->Scene->Hero, Memory->Scene->Hero.Dagger.BaddieStuckTo);
+    CheckPointerCollision(&Memory->Scene->Hero, Memory->Scene->Hero.Dagger.BaddieStuckTo, Memory);
+    CheckHeroCollision(&Memory->Scene->Hero, Memory->Scene->Hero.Dagger.BaddieStuckTo, Memory);
   }
   else
   {
     for (int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
     {
-      CollideWithBaddie(&Memory->Scene->Hero, &Memory->Scene->Baddies[BaddieIndex]);
+      CheckPointerCollision(&Memory->Scene->Hero, &Memory->Scene->Baddies[BaddieIndex], Memory);
+      CheckHeroCollision(&Memory->Scene->Hero, &Memory->Scene->Baddies[BaddieIndex], Memory);
       CheckDaggerCollision(&Memory->Scene->Hero.Dagger, &Memory->Scene->Baddies[BaddieIndex], Memory);
     }
   }
@@ -815,8 +887,6 @@ LOAD_GAME(LoadGame)
   Scene->Hero.CurrentPathIndex = 0;
   Scene->Hero.Radius = 7;
   Scene->Hero.HalfHeight = acosf(30 * DEG2RAD_CONSTANT) * Scene->Hero.Radius * 2;
-  Scene->Hero.RightBumperNotReleased = false;
-  Scene->Hero.LeftBumperNotReleased = false;
 }
 
 extern "C"
