@@ -70,7 +70,7 @@ enum dagger_state {
 };
 
 enum battle_choice {
-  WARPTO, PULLBACK, NONE, PUSH
+  NONE, WARPTO, PULLBACK, PUSH
 };
 
 struct dagger
