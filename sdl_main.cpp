@@ -10,7 +10,6 @@
 #define global_variable static
 #define local_persist static
 
-
 #include "game.h"
 
 #include <windows.h>

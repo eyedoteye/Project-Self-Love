@@ -349,6 +349,7 @@ UpdateSmoothedDirection(input_state *Input, float Dt)
     float T = LERP(Dt / ANALOG_SMOOTHING_TIME_AT_DEADZONE_EDGE_IN_SECONDS, 1, AnalogMagnitude);
 
     Controller->SmoothedDirection = LERP(Controller->SmoothedDirection, NewDirection, T);
+    //Controller->SmoothedDirection = NewDirection;
 
     // Note(sigmasleep): For debugging
     if(ControllerIndex == 0)
@@ -379,6 +380,7 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
   {
 		Hero->DirectionFacing = Input->Controllers[0].SmoothedDirection;
+    Hero->DirectionFacing = atan2f(Hero->Velocity.Y, Hero->Velocity.X) * RAD2DEG_CONSTANT;
   }
 }
 
@@ -535,32 +537,43 @@ RenderDebugArt(game_memory *Memory)
       SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
   }
 
-  vector RandomPoint1;
-  vector RandomPoint2;
-  RandomPoint1.X = 100;
-  RandomPoint1.Y = 200;
-  RandomPoint2.X = 300;
-  RandomPoint2.Y = 100;
+  vector Point[4];
+  Point[0].X = 10;
+  Point[0].Y = 10;
+  Point[1].X = SCREEN_WIDTH - 10;
+  Point[1].Y = 10;
+  Point[2].X = SCREEN_WIDTH - 10;
+  Point[2].Y = SCREEN_HEIGHT - 10;
+  Point[3].X = 10;
+  Point[3].Y = SCREEN_HEIGHT - 10;
 
-  vector CollisionVector;
-
-  if (FillCollisionVectorCircleToLineWithVelocity(
-    &CollisionVector,
-    Memory->Scene->Hero.Position.X,
-    Memory->Scene->Hero.Position.Y,
-    Memory->Scene->Hero.Radius,
-    Memory->Scene->Hero.Velocity.X,
-    Memory->Scene->Hero.Velocity.Y,
-    RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y
-  ))
-  {
-    Memory->Scene->Hero.Position.X += CollisionVector.X;
-    Memory->Scene->Hero.Position.Y += CollisionVector.Y;
-  }
   Memory->Scene->Hero.Position.X += Memory->Scene->Hero.Velocity.X;
   Memory->Scene->Hero.Position.Y += Memory->Scene->Hero.Velocity.Y;
 
-  if (IsPointLeftHandToLine(
+  for (int PointIndex = 0; PointIndex < 4; PointIndex++)
+  {
+    vector CollisionVector;
+
+    vector *Point1 = &Point[PointIndex];
+    vector *Point2 = &Point[(PointIndex + 11) % 4];
+
+    if (FillCollisionVectorCircleToLineWithVelocity(
+      &CollisionVector,
+      Memory->Scene->Hero.Position.X,
+      Memory->Scene->Hero.Position.Y,
+      Memory->Scene->Hero.Radius,
+      Memory->Scene->Hero.Velocity.X,
+      Memory->Scene->Hero.Velocity.Y,
+      Point1->X, Point1->Y, Point2->X, Point2->Y
+    ))
+    {
+      Memory->Scene->Hero.Position.X += CollisionVector.X;
+      Memory->Scene->Hero.Position.Y += CollisionVector.Y;
+    }
+    GlobalDebugTools->DrawLine(Point1->X, Point1->Y, Point2->X, Point2->Y);
+  }
+
+  /*if (IsPointLeftHandToLine(
     Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
     RandomPoint1.X, RandomPoint1.Y,
     RandomPoint2.X, RandomPoint2.Y))
@@ -570,7 +583,9 @@ RenderDebugArt(game_memory *Memory)
   else
   {
     GlobalDebugTools->SetColor(0, 0, 255, 255);
-  }
+  }*/
+
+  GlobalDebugTools->SetColor(0, 0, 255, 255);
   GlobalDebugTools->DrawCircle(
     Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
     Memory->Scene->Hero.Radius, 32);
@@ -581,7 +596,6 @@ RenderDebugArt(game_memory *Memory)
   }
   else
   {
-    GlobalDebugTools->SetColor(0, 0, 255, 255);
     for (int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
     {
       RenderBaddie(&Memory->Scene->Baddies[BaddieIndex]);
@@ -592,9 +606,7 @@ RenderDebugArt(game_memory *Memory)
     Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
     Memory->Scene->Hero.DirectionFacing,
     Memory->Scene->Hero.HalfHeight);
-
-  GlobalDebugTools->DrawLine(RandomPoint1.X, RandomPoint1.Y, RandomPoint2.X, RandomPoint2.Y);
-
+  
   vector RandomPoint3;
   RandomPoint3.X = Memory->Scene->Hero.Position.X;
   RandomPoint3.Y = Memory->Scene->Hero.Position.Y;
@@ -606,8 +618,9 @@ RenderDebugArt(game_memory *Memory)
   vector RandomPoint4;
   RandomPoint4.X = RandomPoint3.X + HeroDirection.X * 60;
   RandomPoint4.Y = RandomPoint3.Y + HeroDirection.Y * 60;
+  GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
 
-  CollisionVector = {};
+  /*CollisionVector = {};
 
   if (FillCollisionVectorLineToLine(
     &CollisionVector,
@@ -632,7 +645,7 @@ RenderDebugArt(game_memory *Memory)
   else
   {
     GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
-  }
+  }*/
 
   GlobalDebugTools->SetColor(255, 255, 255, 255);
   GlobalDebugTools->DrawCircle(
@@ -640,6 +653,19 @@ RenderDebugArt(game_memory *Memory)
     Memory->Scene->Hero.Dagger.Position.Y,
     Memory->Scene->Hero.Dagger.Radius,
     12
+  );
+
+  GlobalDebugTools->DrawCircle(
+    80, 80, 50, 50
+  );
+  GlobalDebugTools->DrawCircle(
+    80 + Memory->Input->Controllers[0].X * 50,
+    80 + Memory->Input->Controllers[0].Y * 50,
+    4, 10
+  );
+  GlobalDebugTools->SetColor(0, 0, 0, 255);
+  GlobalDebugTools->DrawCircle(
+    80, 80, 2, 4
   );
 }
 
