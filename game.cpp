@@ -1,4 +1,7 @@
 #include "game.h"
+// Note(sigmasleep): These are moved in here for debugging
+#include <stdio.h>
+#include <windows.h>
 
 internal float
 GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)
@@ -150,11 +153,11 @@ FillCollisionVectorCircleToLine(
 	);
 }
 
-/*internal float
+internal float
 GetVectorMagnitude(vector *Input)
 {
   return sqrtf(Input->X * Input->X + Input->Y * Input->Y);
-}*/
+}
 
 internal void
 NormalizeVector(vector *Output, vector *Input)
@@ -327,6 +330,42 @@ ProcessControllerMovement(controller_state *Controller, vector *Movement)
   Movement->Y = Y;
 }
 
+#define ANALOG_SMOOTHING_TIME_AT_DEADZONE_EDGE_IN_SECONDS 420.f
+internal void
+UpdateSmoothedDirection(input_state *Input, float Dt)
+{
+  for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ControllerIndex++)
+  {
+    controller_state *Controller = &Input->Controllers[ControllerIndex];
+    
+    Controller->SmoothedDirectionLastState = Controller->SmoothedDirection;
+
+    float NewDirection = atan2f(Controller->Y, Controller->X) * RAD2DEG_CONSTANT;
+    vector AnalogPosition;
+    AnalogPosition.X = Controller->X;
+    AnalogPosition.Y = Controller->Y;
+    float AnalogMagnitude = GetVectorMagnitude(&AnalogPosition);
+    
+    float T = LERP(Dt / ANALOG_SMOOTHING_TIME_AT_DEADZONE_EDGE_IN_SECONDS, 1, AnalogMagnitude);
+
+    Controller->SmoothedDirection = LERP(Controller->SmoothedDirection, NewDirection, T);
+
+    // Note(sigmasleep): For debugging
+    if(ControllerIndex == 0)
+    {
+      char output[255];
+      snprintf(output, 255,
+               "AnalogMagnitude[%i]: %f\n \
+                Dt / A: %f \
+                T: %f\n",
+               ControllerIndex, AnalogMagnitude,
+               Dt / ANALOG_SMOOTHING_TIME_AT_DEADZONE_EDGE_IN_SECONDS,
+               T);
+      OutputDebugStringA(output);
+    }
+  }
+}
+
 internal void
 MovePlayer(hero *Hero, input_state *Input, float Dt)
 {
@@ -338,7 +377,9 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 	Hero->Velocity.Y = 100 * InputMovement.Y * Dt;
 
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
-		Hero->DirectionFacing = atan2f(InputMovement.Y, InputMovement.X) * RAD2DEG_CONSTANT;
+  {
+		Hero->DirectionFacing = Input->Controllers[0].SmoothedDirection;
+  }
 }
 
 internal void
@@ -850,22 +891,26 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
   // CheckCollisions (void pointer that fills in collision info)
   // MoveAndResolveCollisions (void pointers that use Dt and two info sets that store the collision information and entities involved)
   // FramEndLogic (void pointer that uses Dt, entity info, game state, and input state)
-  Memory->CollisionsSize = 0;
+  game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
 
-  ProcessLogics(Memory, Dt);
-  CheckCollisions(Memory, Dt);
-  ResolveCollisions(Memory);
-  ProcessPostCollisionLogics(Memory, Dt);
+  GameMemory->CollisionsSize = 0;
+
+  UpdateSmoothedDirection(GameMemory->Input, Dt);
+  ProcessLogics(GameMemory, Dt);
+  CheckCollisions(GameMemory, Dt);
+  ResolveCollisions(GameMemory);
+  ProcessPostCollisionLogics(GameMemory, Dt);
   //UpdateGame(Memory, Dt);
-  RenderDebugArt(Memory);
+  RenderDebugArt(GameMemory);
 }
 
 extern "C"
 LOAD_GAME(LoadGame)
 {
   GlobalDebugTools = DebugTools;
+  game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
 
-  scene *Scene = Memory->Scene;
+  scene *Scene = GameMemory->Scene;
 
   scene ClearedScene = {};
   *Scene = ClearedScene;
@@ -893,8 +938,9 @@ extern "C"
 RELOAD_GAME(ReloadGame)
 {
 	GlobalDebugTools = DebugTools;
+  game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
 
-	scene *Scene = Memory->Scene;
+	scene *Scene = GameMemory->Scene;
 
   baddie Baddie = {};
   Baddie.Position.X = SCREEN_WIDTH / 4;

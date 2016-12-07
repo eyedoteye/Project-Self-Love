@@ -22,13 +22,20 @@ struct button_state
 	bool IsDown;
 };
 
+// Note(sigmasleep): SmoothedDirection is handled by game layer.
 struct controller_state
 {
+  struct
+  {
+    float SmoothedDirectionLastState;
+    float SmoothedDirection;
+  };
+
 	struct
 	{
 		float XLastState;
 		float YLastState;
-		uint32_t Duration;
+    uint32_t Duration;
 		float X;
 		float Y;
 	};
@@ -196,11 +203,17 @@ struct debug_tools
 };
 global_variable debug_tools *GlobalDebugTools;
 
-#define LOAD_GAME(name) void name(game_memory *Memory, debug_tools *DebugTools)
+struct memory
+{
+  int Size;
+  void *AllocatedSpace;
+};
+
+#define LOAD_GAME(name) void name(memory *Memory, debug_tools *DebugTools)
 typedef LOAD_GAME(load_game);
 
-#define RELOAD_GAME(name) void name(game_memory *Memory, debug_tools *DebugTools)
+#define RELOAD_GAME(name) void name(memory *Memory, debug_tools *DebugTools)
 typedef RELOAD_GAME(reload_game);
 
-#define UPDATE_AND_RENDER_GAME(name) void name(game_memory *Memory, float Dt)
+#define UPDATE_AND_RENDER_GAME(name) void name(memory *Memory, float Dt)
 typedef UPDATE_AND_RENDER_GAME(update_and_render_game);

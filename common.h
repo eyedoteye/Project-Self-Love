@@ -15,3 +15,4 @@
 
 #define CLIP(X, A, B) ((X < A) ? A : ((X > B) ? B : X))
 #define ABS(X) (X < 0 ? -X : X)
+#define LERP(A, B, T) ((1-T)*A + T*B)

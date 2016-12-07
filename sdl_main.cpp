@@ -10,11 +10,16 @@
 #define global_variable static
 #define local_persist static
 
+
 #include "game.h"
 
 #include <windows.h>
 #include <stdio.h>
 #include "SDL.h"
+
+#define Kilobytes(Value) ((Value) * 1024L)
+#define Megabytes(Value) (Kilobytes(Value) * 1024L)
+#define Gigabytes(Value) (Megabytes(Value) * 1024L)
 
 global_variable SDL_Renderer *GlobalRenderer;
 global_variable bool GlobalRunning = true;
@@ -194,6 +199,20 @@ UpdateButton(button_state *Button, bool IsDown)
   }
 }
 
+internal void
+AllocateMemory(memory *Memory, int size)
+{
+  Memory->AllocatedSpace = VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  if (Memory->AllocatedSpace)
+  {
+    Memory->Size = 0;
+  }
+  else
+  {
+    Memory->Size = -1;
+  }
+}
+
 int
 main(int argc, char* args[])
 {
@@ -224,8 +243,10 @@ main(int argc, char* args[])
   game_functions GameFunctions;
   LoadGameFunctions(&GameFunctions);
 
+  memory Memory;
+  AllocateMemory(&Memory, Megabytes(500));
+
   float Dt;
-  game_memory GameMemory;
   input_state Input = {};
   
   for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ++ControllerIndex)
@@ -238,10 +259,11 @@ main(int argc, char* args[])
   }
 
   scene Scene = {};
-  GameMemory.Input = &Input;
-  GameMemory.Scene = &Scene;
+  game_memory *GameMemory = (game_memory*)Memory.AllocatedSpace;
+  GameMemory->Input = &Input;
+  GameMemory->Scene = &Scene;
 
-	GameFunctions.LoadGame(&GameMemory, &DebugTools);
+	GameFunctions.LoadGame(&Memory, &DebugTools);
 
 	uint32_t LastTime = SDL_GetTicks();	
 	
@@ -266,7 +288,7 @@ main(int argc, char* args[])
     {
       UnloadGameFunctions(&GameFunctions);
       LoadGameFunctions(&GameFunctions);
-      GameFunctions.ReloadGame(&GameMemory, &DebugTools);
+      GameFunctions.ReloadGame(&Memory, &DebugTools);
     }
 
 		while(SDL_PollEvent(&e) != 0)
@@ -282,22 +304,35 @@ main(int argc, char* args[])
 					SDL_ControllerAxisEvent Event = e.caxis;
 
 					// Note(sigmasleep): Deadzone value from mdsn for XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE
+          //#define XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  7849
+          //#define XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE 8689
+          //#define XINPUT_GAMEPAD_TRIGGER_THRESHOLD    30
 					float Deadzone = 7849;
 					// Note(sigmasleep): Normalization via division by int16 min/max values
 					// Subtracting deadzone smooths the linear ramp that would otherwise be cut off.
-					float NormalizedValue = ABS(Event.value) < Deadzone ? 0.f : Event.value < 0 ?
-						(Event.value + Deadzone) / (32768.f - Deadzone) :
-						(Event.value - Deadzone) / (32767.f - Deadzone);
+          //float NormalizedValue = ABS(Event.value) < Deadzone ? 0.f : Event.value < 0 ?
+					//	(Event.value + Deadzone) / (32768.f - Deadzone) :
+					//	(Event.value - Deadzone) / (32767.f - Deadzone);
 
 					if(Event.which < CONTROLLER_MAX)
 					{
 						// Todo(sigmasleep): Add timing
 						controller_state* Controller = &Input.Controllers[Event.which];
 
+            float NormalizedValue = 0;
+
 						switch(Event.axis)
 						{
 							case SDL_CONTROLLER_AXIS_LEFTX:
 							{
+                // Todo(sigmasleep): Clean up this radial deadzone handling
+                if (Event.value * Event.value + Controller->Y * Controller->Y > Deadzone * Deadzone)
+                {
+                  NormalizedValue = Event.value < 0 ?
+                    (Event.value + Deadzone) / (32768.f - Deadzone) :
+                    (Event.value - Deadzone) / (32767.f - Deadzone);
+                }
+
 								if(Controller->X != NormalizedValue)
 								{
 									Controller->XLastState = Controller->X;
@@ -311,6 +346,13 @@ main(int argc, char* args[])
 							} break;
 							case SDL_CONTROLLER_AXIS_LEFTY:
 							{
+                if (Event.value * Event.value + Controller->X * Controller->X > Deadzone * Deadzone)
+                {
+                  NormalizedValue = Event.value < 0.f ?
+                    (Event.value + Deadzone) / (32768.f - Deadzone) :
+                    (Event.value - Deadzone) / (32767.f - Deadzone);
+                }
+
 								if(Controller->Y != NormalizedValue)
 								{
 									Controller->YLastState = Controller->Y;
@@ -400,7 +442,7 @@ main(int argc, char* args[])
 			}
 		}
 
-		GameFunctions.UpdateAndRenderGame(&GameMemory, Dt);
+		GameFunctions.UpdateAndRenderGame(&Memory, Dt);
 		SDL_RenderPresent(GlobalRenderer);
 
 		SDL_Delay(1);
