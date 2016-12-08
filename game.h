@@ -25,18 +25,14 @@ struct button_state
 // Note(sigmasleep): SmoothedDirection is handled by game layer.
 struct controller_state
 {
-  struct
-  {
-    float SmoothedDirectionLastState;
-    float SmoothedDirection;
-  };
-
 	struct
 	{
 		float XLastState;
 		float YLastState;
     uint32_t Duration;
-		float X;
+    int RawX;
+    int RawY;
+    float X;
 		float Y;
 	};
 

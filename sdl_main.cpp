@@ -306,8 +306,8 @@ main(int argc, char* args[])
           //#define XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  7849
           //#define XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE 8689
           //#define XINPUT_GAMEPAD_TRIGGER_THRESHOLD    30
-					float Deadzone = 7849;
-					// Note(sigmasleep): Normalization via division by int16 min/max values
+					//float InnerDeadzone = 8689.f;
+          // Note(sigmasleep): Normalization via division by int16 min/max values
 					// Subtracting deadzone smooths the linear ramp that would otherwise be cut off.
           //float NormalizedValue = ABS(Event.value) < Deadzone ? 0.f : Event.value < 0 ?
 					//	(Event.value + Deadzone) / (32768.f - Deadzone) :
@@ -318,19 +318,15 @@ main(int argc, char* args[])
 						// Todo(sigmasleep): Add timing
 						controller_state* Controller = &Input.Controllers[Event.which];
 
-            float NormalizedValue = 0;
+            float NormalizedValue = Event.value < 0 ?
+              Event.value / 32768.f :
+              Event.value / 32767.f;
 
 						switch(Event.axis)
 						{
 							case SDL_CONTROLLER_AXIS_LEFTX:
 							{
-                // Todo(sigmasleep): Clean up this radial deadzone handling
-                if (Event.value * Event.value + Controller->Y * Controller->Y > Deadzone * Deadzone)
-                {
-                  NormalizedValue = Event.value < 0 ?
-                    (Event.value + Deadzone) / (32768.f - Deadzone) :
-                    (Event.value - Deadzone) / (32767.f - Deadzone);
-                }
+                Controller->RawX = Event.value;
 
 								if(Controller->X != NormalizedValue)
 								{
@@ -345,19 +341,14 @@ main(int argc, char* args[])
 							} break;
 							case SDL_CONTROLLER_AXIS_LEFTY:
 							{
-                if (Event.value * Event.value + Controller->X * Controller->X > Deadzone * Deadzone)
-                {
-                  NormalizedValue = Event.value < 0.f ?
-                    (Event.value + Deadzone) / (32768.f - Deadzone) :
-                    (Event.value - Deadzone) / (32767.f - Deadzone);
-                }
+                Controller->RawY = Event.value;
 
 								if(Controller->Y != NormalizedValue)
 								{
 									Controller->YLastState = Controller->Y;
 
 									Controller->Y = NormalizedValue;
-									char output[255];
+                  char output[255];
 									snprintf(output, 255, "LeftY: %f\n",
 											 NormalizedValue);
 									OutputDebugStringA(output);

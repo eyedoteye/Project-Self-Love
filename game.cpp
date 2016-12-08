@@ -311,60 +311,58 @@ ProcessControllerMovement(controller_state *Controller, vector *Movement)
 	{
 		Y += 1;
 	}
+  
+  vector AnalogInput;
+  AnalogInput.X = Controller->X;
+  AnalogInput.Y = Controller->Y;
+  {
+    float MagnitudeSquared = AnalogInput.X * AnalogInput.X + AnalogInput.Y * AnalogInput.Y;
+#define OUTERDEADZONE .84f    
+    //if (MagnitudeSquared > OUTERDEADZONE * OUTERDEADZONE)
+    //{
+    //  // Note(sigmasleep): The analog coords are outside the outer deadzone
+    //  float Magnitude = sqrtf(MagnitudeSquared);
+    //  AnalogInput.X = AnalogInput.X / Magnitude;
+    //  AnalogInput.Y = AnalogInput.Y / Magnitude;
+    //}
+#define INNERDEADZONE .18f
+    //8689.f / 32768.f
+    //else if (MagnitudeSquared < INNERDEADZONE * INNERDEADZONE)
+    //{
+    //  // Note(sigmasleep): The analog coords are inside the the inner deadzone
+    //  AnalogInput.X = 0;
+    //  AnalogInput.Y = 0;
+    //}
+    //else
+    {
+      // Note(simasleep): The analog coords are between two deadzones and need to be rescaled.
+      float Magnitude = sqrtf(MagnitudeSquared);
+      float Scale = (Magnitude - INNERDEADZONE) / (OUTERDEADZONE - INNERDEADZONE);
+      Scale = CLIP(Scale, 0, 1);
 
-	X += Controller->X;
-	Y += Controller->Y;
+      AnalogInput.X = AnalogInput.X / Magnitude * Scale;
+      AnalogInput.Y = AnalogInput.Y / Magnitude * Scale;
+    }
+  }
+
+	X += AnalogInput.X;
+	Y += AnalogInput.Y;
 
 	X = CLIP(X, -1.f, 1.f);
 	Y = CLIP(Y, -1.f, 1.f);
 
-	float MagnitudeSquared = X * X + Y * Y;
-	if(MagnitudeSquared > 1)
-	{
-		float Magnitude = sqrtf(MagnitudeSquared);
-		X = X / Magnitude;
-		Y = Y / Magnitude;
-	}
+  {
+	  float MagnitudeSquared = X * X + Y * Y;
+	  if(MagnitudeSquared > 1)
+	  {
+		  float Magnitude = sqrtf(MagnitudeSquared);
+		  X = X / Magnitude;
+		  Y = Y / Magnitude;
+	  }
+  }
 
   Movement->X = X;
   Movement->Y = Y;
-}
-
-#define ANALOG_SMOOTHING_TIME_AT_DEADZONE_EDGE_IN_SECONDS 420.f
-internal void
-UpdateSmoothedDirection(input_state *Input, float Dt)
-{
-  for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ControllerIndex++)
-  {
-    controller_state *Controller = &Input->Controllers[ControllerIndex];
-    
-    Controller->SmoothedDirectionLastState = Controller->SmoothedDirection;
-
-    float NewDirection = atan2f(Controller->Y, Controller->X) * RAD2DEG_CONSTANT;
-    vector AnalogPosition;
-    AnalogPosition.X = Controller->X;
-    AnalogPosition.Y = Controller->Y;
-    float AnalogMagnitude = GetVectorMagnitude(&AnalogPosition);
-    
-    float T = LERP(Dt / ANALOG_SMOOTHING_TIME_AT_DEADZONE_EDGE_IN_SECONDS, 1, AnalogMagnitude);
-
-    Controller->SmoothedDirection = LERP(Controller->SmoothedDirection, NewDirection, T);
-    //Controller->SmoothedDirection = NewDirection;
-
-    // Note(sigmasleep): For debugging
-    if(ControllerIndex == 0)
-    {
-      char output[255];
-      snprintf(output, 255,
-               "AnalogMagnitude[%i]: %f\n \
-                Dt / A: %f \
-                T: %f\n",
-               ControllerIndex, AnalogMagnitude,
-               Dt / ANALOG_SMOOTHING_TIME_AT_DEADZONE_EDGE_IN_SECONDS,
-               T);
-      OutputDebugStringA(output);
-    }
-  }
 }
 
 internal void
@@ -379,7 +377,7 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 
 	if(InputMovement.Y != 0 || InputMovement.X != 0)
   {
-		Hero->DirectionFacing = Input->Controllers[0].SmoothedDirection;
+		//Hero->DirectionFacing = Input->Controllers[0].SmoothedDirection;
     Hero->DirectionFacing = atan2f(Hero->Velocity.Y, Hero->Velocity.X) * RAD2DEG_CONSTANT;
   }
 }
@@ -658,14 +656,31 @@ RenderDebugArt(game_memory *Memory)
   GlobalDebugTools->DrawCircle(
     80, 80, 50, 50
   );
-  GlobalDebugTools->DrawCircle(
+  /*GlobalDebugTools->DrawCircle(
     80 + Memory->Input->Controllers[0].X * 50,
     80 + Memory->Input->Controllers[0].Y * 50,
     4, 10
+  );*/
+  vector ProcessedInput;
+  ProcessControllerMovement(&Memory->Input->Controllers[0], &ProcessedInput);
+  GlobalDebugTools->SetColor(255, 0, 255, 255);
+  GlobalDebugTools->DrawCircle(
+    80 + ProcessedInput.X * 50,
+    80 + ProcessedInput.Y * 50,
+    3, 10
   );
   GlobalDebugTools->SetColor(0, 0, 0, 255);
   GlobalDebugTools->DrawCircle(
-    80, 80, 2, 4
+    80 + Memory->Input->Controllers[0].X * 50,
+    80 + Memory->Input->Controllers[0].Y * 50,
+    3, 10
+  );
+  GlobalDebugTools->SetColor(255, 0, 0, 255);
+  GlobalDebugTools->DrawCircle(
+    80, 80, 2, 8
+  );
+  GlobalDebugTools->DrawCircle(
+    80, 80, 1, 1
   );
 }
 
@@ -921,7 +936,6 @@ UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 
   GameMemory->CollisionsSize = 0;
 
-  UpdateSmoothedDirection(GameMemory->Input, Dt);
   ProcessLogics(GameMemory, Dt);
   CheckCollisions(GameMemory, Dt);
   ResolveCollisions(GameMemory);
