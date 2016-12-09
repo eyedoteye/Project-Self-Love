@@ -22,10 +22,9 @@ struct button_state
 	bool IsDown;
 };
 
-// Note(sigmasleep): SmoothedDirection is handled by game layer.
 struct controller_state
-{
-	struct
+{  
+  struct
 	{
 		float XLastState;
 		float YLastState;
@@ -34,7 +33,8 @@ struct controller_state
     int RawY;
     float X;
 		float Y;
-	};
+    bool WasMovedThisFrame;
+  };
 
 	union
 	{

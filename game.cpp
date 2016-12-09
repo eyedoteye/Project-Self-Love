@@ -317,28 +317,28 @@ ProcessControllerMovement(controller_state *Controller, vector *Movement)
   AnalogInput.Y = Controller->Y;
   {
     float MagnitudeSquared = AnalogInput.X * AnalogInput.X + AnalogInput.Y * AnalogInput.Y;
-#define OUTERDEADZONE .84f    
-    //if (MagnitudeSquared > OUTERDEADZONE * OUTERDEADZONE)
-    //{
-    //  // Note(sigmasleep): The analog coords are outside the outer deadzone
-    //  float Magnitude = sqrtf(MagnitudeSquared);
-    //  AnalogInput.X = AnalogInput.X / Magnitude;
-    //  AnalogInput.Y = AnalogInput.Y / Magnitude;
-    //}
+#define OUTERDEADZONE .98f    
+    if (MagnitudeSquared > OUTERDEADZONE * OUTERDEADZONE)
+    {
+      // Note(sigmasleep): The analog coords are outside the outer deadzone
+      float Magnitude = sqrtf(MagnitudeSquared);
+      AnalogInput.X = AnalogInput.X / Magnitude;
+      AnalogInput.Y = AnalogInput.Y / Magnitude;
+    }
 #define INNERDEADZONE .18f
     //8689.f / 32768.f
-    //else if (MagnitudeSquared < INNERDEADZONE * INNERDEADZONE)
-    //{
-    //  // Note(sigmasleep): The analog coords are inside the the inner deadzone
-    //  AnalogInput.X = 0;
-    //  AnalogInput.Y = 0;
-    //}
-    //else
+    else if (MagnitudeSquared < INNERDEADZONE * INNERDEADZONE)
+    {
+      // Note(sigmasleep): The analog coords are inside the the inner deadzone
+      AnalogInput.X = 0;
+      AnalogInput.Y = 0;
+    }
+    else
     {
       // Note(simasleep): The analog coords are between two deadzones and need to be rescaled.
       float Magnitude = sqrtf(MagnitudeSquared);
       float Scale = (Magnitude - INNERDEADZONE) / (OUTERDEADZONE - INNERDEADZONE);
-      Scale = CLIP(Scale, 0, 1);
+      //Scale = CLIP(Scale, 0, 1);
 
       AnalogInput.X = AnalogInput.X / Magnitude * Scale;
       AnalogInput.Y = AnalogInput.Y / Magnitude * Scale;
@@ -375,10 +375,16 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 	Hero->Velocity.X = 100 * InputMovement.X * Dt;
 	Hero->Velocity.Y = 100 * InputMovement.Y * Dt;
 
-	if(InputMovement.Y != 0 || InputMovement.X != 0)
+	if (Input->Controllers[0].WasMovedThisFrame)
   {
-		//Hero->DirectionFacing = Input->Controllers[0].SmoothedDirection;
-    Hero->DirectionFacing = atan2f(Hero->Velocity.Y, Hero->Velocity.X) * RAD2DEG_CONSTANT;
+    if (InputMovement.X == 0 && InputMovement.Y == 0)
+    {
+      Hero->DirectionFacing = atan2f(Input->Controllers[0].Y, Input->Controllers[0].X) * RAD2DEG_CONSTANT;
+    }
+    else
+    {
+      Hero->DirectionFacing = atan2f(Hero->Velocity.Y, Hero->Velocity.X) * RAD2DEG_CONSTANT;
+    }
   }
 }
 

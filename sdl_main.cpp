@@ -290,6 +290,13 @@ main(int argc, char* args[])
       GameFunctions.ReloadGame(&Memory, &DebugTools);
     }
 
+    {
+      for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ++ControllerIndex)
+      {
+        Input.Controllers[ControllerIndex].WasMovedThisFrame = false;
+      }
+    }
+
 		while(SDL_PollEvent(&e) != 0)
 		{
 			switch(e.type)
@@ -326,6 +333,7 @@ main(int argc, char* args[])
 						{
 							case SDL_CONTROLLER_AXIS_LEFTX:
 							{
+                Controller->WasMovedThisFrame = Controller->WasMovedThisFrame || Controller->RawX != Event.value;
                 Controller->RawX = Event.value;
 
 								if(Controller->X != NormalizedValue)
@@ -341,6 +349,7 @@ main(int argc, char* args[])
 							} break;
 							case SDL_CONTROLLER_AXIS_LEFTY:
 							{
+                Controller->WasMovedThisFrame = Controller->WasMovedThisFrame || Controller->RawY != Event.value;
                 Controller->RawY = Event.value;
 
 								if(Controller->Y != NormalizedValue)
