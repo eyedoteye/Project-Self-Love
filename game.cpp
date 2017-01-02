@@ -372,13 +372,13 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
 	Hero->Velocity.X = 100 * InputMovement.X * Dt;
 	Hero->Velocity.Y = 100 * InputMovement.Y * Dt;
 
-	if (Input->Controllers[0].WasMovedThisFrame)
+	if (Input->Controllers[0].WasMovedThisFrame ||
+      Input->Controllers[0].Left.IsDown ||
+      Input->Controllers[0].Right.IsDown ||
+      Input->Controllers[0].Up.IsDown ||
+      Input->Controllers[0].Down.IsDown)
   {
-    if (InputMovement.X == 0 && InputMovement.Y == 0)
-    {
-      Hero->DirectionFacing = atan2f(Input->Controllers[0].Y, Input->Controllers[0].X) * RAD2DEG_CONSTANT;
-    }
-    else
+    if (InputMovement.X != 0 || InputMovement.Y != 0)
     {
       Hero->DirectionFacing = atan2f(Hero->Velocity.Y, Hero->Velocity.X) * RAD2DEG_CONSTANT;
     }
