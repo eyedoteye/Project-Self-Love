@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <sys/stat.h>
+#include <stdarg.h>
 
 #define internal static
 #define global_variable static
@@ -23,6 +24,31 @@
 global_variable SDL_Renderer *GlobalRenderer;
 global_variable bool GlobalRunning = true;
 global_variable SDL_Window *GlobalWindow;
+
+internal int
+GetTerminatedStringLength(char* String)
+{
+	int Length = 0;
+	while(*String != '\0')
+	{
+		Length++;
+		String++;
+	}
+
+	return Length;
+}
+
+DEBUG_PRINT(DebugPrint)
+{
+	//int StringLength = GetTerminatedStringLength(OutputString);
+	va_list Arguments;
+	va_start(Arguments, OutputString);
+
+	char OutputBuffer[255];
+	vsnprintf(OutputBuffer, 255, OutputString, Arguments);
+	
+	OutputDebugStringA(OutputBuffer);
+}
 
 // Note(sigmasleep): Should these functions exist in platform layer?
 DEBUG_SET_COLOR(DebugSetColor)
@@ -107,19 +133,6 @@ struct game_functions
   reload_game *ReloadGame;
   update_and_render_game *UpdateAndRenderGame;
 };
-
-internal int
-GetTerminatedStringLength(char* String)
-{
-  int Length = 0;
-  while (*String != '\0')
-  {
-    Length++;
-    String++;
-  }
-
-  return Length;
-}
 
 internal void
 LoadGameFunctions(game_functions *GameFunctions)
@@ -231,6 +244,7 @@ main(int argc, char* args[])
 	SDL_GameController *Controller1 = SDL_GameControllerOpen(0);
 
   debug_tools DebugTools;
+	DebugTools.Print = DebugPrint;
   DebugTools.DrawBox = DebugDrawBox;
   DebugTools.DrawCircle = DebugDrawCircle;
   DebugTools.DrawLine = DebugDrawLine;

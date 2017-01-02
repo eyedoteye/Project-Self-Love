@@ -1,7 +1,4 @@
 #include "game.h"
-// Note(sigmasleep): These are moved in here for debugging
-#include <stdio.h>
-#include <windows.h>
 
 internal float
 GetDistanceBetweenPoints(float X1, float Y1, float X2, float Y2)

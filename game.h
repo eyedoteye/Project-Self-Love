@@ -143,7 +143,13 @@ struct game_memory
 };
 
 // Note(sigmasleep): Should be provided by platform layer.
-// Note(sigmasleep): Is this the best place for this?
+// Note(sigmasleep): Is this the best place for these Debug Functions?
+#define DEBUG_PRINT(name) void name( \
+	char* OutputString,			\
+	...											\
+)
+typedef DEBUG_PRINT(debug_print);
+
 #define DEBUG_DRAW_SEMI_CIRCLE(name) void name( \
 	float X, float Y,                 \
 	float Radius,                     \
@@ -189,6 +195,7 @@ typedef DEBUG_SET_COLOR(debug_set_color);
 
 struct debug_tools
 {
+	debug_print *Print;
   debug_draw_semi_circle *DrawSemiCircle;
   debug_draw_circle *DrawCircle;
   debug_draw_triangle *DrawTriangle;
