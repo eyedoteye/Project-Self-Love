@@ -225,6 +225,21 @@ AllocateMemory(memory *Memory, int size)
   }
 }
 
+// Note(sigmasleep): This is copy pasted from SDL source in order to use the inner juices.s
+struct _SDL_GameController
+{
+  SDL_Joystick *joystick; /* underlying joystick device */
+ // int ref_count;
+ // Uint8 hatState[4]; /* the current hat state for this controller */
+ // struct _SDL_ControllerMapping mapping; /* the mapping object for this controller */
+ // struct _SDL_GameController *next; /* pointer to next game controller we have allocated */
+};
+
+struct _SDL_Joystick
+{
+  SDL_JoystickID instance_id; /* Device instance, monotonically increasing from 0 */
+};
+
 int
 main(int argc, char* args[])
 {
@@ -241,8 +256,19 @@ main(int argc, char* args[])
 	GlobalRenderer = SDL_CreateRenderer(GlobalWindow, -1, 0);
 
 	SDL_Event e;
-	SDL_GameController *Controller1 = SDL_GameControllerOpen(0);
+  SDL_GameController *Controllers[4] = {};
+  
+  int ControllerCount = SDL_NumJoysticks();
+  ControllerCount = ControllerCount > CONTROLLER_MAX ? CONTROLLER_MAX : ControllerCount;
 
+  for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ++ControllerIndex)
+  {
+    if (SDL_IsGameController(ControllerIndex))
+    {
+      Controllers[ControllerIndex] = SDL_GameControllerOpen(ControllerIndex);
+    }
+  }
+  
   debug_tools DebugTools;
 	DebugTools.Print = DebugPrint;
   DebugTools.DrawBox = DebugDrawBox;
@@ -319,7 +345,39 @@ main(int argc, char* args[])
 				{
 					GlobalRunning = false;
 				} break;
-				case SDL_CONTROLLERAXISMOTION:
+        case SDL_CONTROLLERDEVICEADDED:
+        {
+          SDL_ControllerDeviceEvent Event = e.cdevice;
+          DebugPrint("Added: %u", Event.which);
+          if (ControllerCount < CONTROLLER_MAX)
+          {
+            //for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
+            //{
+              if (Controllers[Event.which] == NULL)
+              {
+                Controllers[Event.which] = SDL_GameControllerOpen(Event.which);
+                ++ControllerCount;
+              }
+              //else if(Controllers[ControllerIndex])
+            //}
+          }
+          
+        } break;
+        case SDL_CONTROLLERDEVICEREMOVED:
+        {
+          SDL_ControllerDeviceEvent Event = e.cdevice;
+          DebugPrint("Removed: %u", Event.which);
+          for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
+          {
+            if (Controllers[ControllerIndex]->joystick->instance_id == Event.which)
+            {
+              SDL_GameControllerClose(Controllers[ControllerIndex]);
+              Controllers[ControllerIndex] = NULL;
+              --ControllerCount;
+            }
+          }
+        } break;
+        case SDL_CONTROLLERAXISMOTION:
 				{
 					SDL_ControllerAxisEvent Event = e.caxis;
 
@@ -334,11 +392,22 @@ main(int argc, char* args[])
 					//	(Event.value + Deadzone) / (32768.f - Deadzone) :
 					//	(Event.value - Deadzone) / (32767.f - Deadzone);
 
-					if(Event.which < CONTROLLER_MAX)
+          int ActualControllerIndex = -1;
+          for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
+          {
+            if (Controllers[ControllerIndex] != NULL
+                && Controllers[ControllerIndex]->joystick->instance_id == Event.which)
+            {
+              ActualControllerIndex = ControllerIndex;
+              break;
+            }
+          }
+
+          controller_state* Controller = &Input.Controllers[ActualControllerIndex];
+					if(ActualControllerIndex != -1)
 					{
 						// Todo(sigmasleep): Add timing
-						controller_state* Controller = &Input.Controllers[Event.which];
-
+            
             float NormalizedValue = Event.value < 0 ?
               Event.value / 32768.f :
               Event.value / 32767.f;
@@ -388,11 +457,22 @@ main(int argc, char* args[])
 
 					bool IsDown = Event.state == SDL_PRESSED;
 
-					// Todo(sigmasleep): Replace magic number with controllercount variable
-					if(Event.which < CONTROLLER_MAX)
+          int ActualControllerIndex = -1;
+          for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
+          {
+            if (Controllers[ControllerIndex] != NULL
+                && Controllers[ControllerIndex]->joystick->instance_id == Event.which)
+            {
+              ActualControllerIndex = ControllerIndex;
+              break;
+            }
+          }
+
+					if(ActualControllerIndex != -1)
 					{
 						// Todo(sigmasleep): Add timing
-						controller_state *Controller = &Input.Controllers[Event.which];
+            controller_state* Controller = &Input.Controllers[ActualControllerIndex];
+
             switch(Event.button)
 						{
 							case SDL_CONTROLLER_BUTTON_DPAD_UP:
@@ -462,8 +542,6 @@ main(int argc, char* args[])
   }
 
   UnloadGameFunctions(&GameFunctions);
-
-	SDL_GameControllerClose(Controller1);
 
 	SDL_Quit();
 
