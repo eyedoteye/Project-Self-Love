@@ -382,6 +382,10 @@ MovePlayer(hero *Hero, input_state *Input, float Dt)
     {
       Hero->DirectionFacing = atan2f(Hero->Velocity.Y, Hero->Velocity.X) * RAD2DEG_CONSTANT;
     }
+    else if (Input->Controllers[0].WasMovedThisFrame)
+    {
+      Hero->DirectionFacing = atan2f(Input->Controllers[0].Y, Input->Controllers[0].X) * RAD2DEG_CONSTANT;
+    }
   }
 }
 
