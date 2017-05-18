@@ -15,7 +15,7 @@
 
 #include <windows.h>
 #include <stdio.h>
-#include "SDL.h"
+#include <SDL2/SDL.h>
 
 #define Kilobytes(Value) ((Value) * 1024L)
 #define Megabytes(Value) (Kilobytes(Value) * 1024L)
@@ -74,12 +74,16 @@ DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
 
 	for(int PointNum = 0; PointNum < Segments; PointNum++)
 	{
-		Position2.X = X + cosf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
-		Position2.Y = Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
+		Position2.X =
+      X + cosf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
+		Position2.Y =
+      Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
+
 		SDL_RenderDrawLine(
       GlobalRenderer,
 			(int)Position1.X, (int)Position1.Y,
 			(int)Position2.X, (int)Position2.Y);
+
 		Position1.X = Position2.X;
 		Position1.Y = Position2.Y;
 	}
@@ -241,7 +245,7 @@ struct _SDL_Joystick
 };
 
 int
-main(int argc, char* args[])
+main(int argc, char* argv[])
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
 	{
