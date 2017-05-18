@@ -15,15 +15,17 @@
 
 #include <windows.h>
 #include <stdio.h>
+#define GLEW_STATIC
+#include <GL/glew.h>
 #include <SDL2/SDL.h>
 
 #define Kilobytes(Value) ((Value) * 1024L)
 #define Megabytes(Value) (Kilobytes(Value) * 1024L)
 #define Gigabytes(Value) (Megabytes(Value) * 1024L)
 
-global_variable SDL_Renderer *GlobalRenderer;
 global_variable bool GlobalRunning = true;
 global_variable SDL_Window *GlobalWindow;
+global_variable SDL_GLContext GlobalContext;
 
 internal int
 GetTerminatedStringLength(char* String)
@@ -53,14 +55,16 @@ DEBUG_PRINT(DebugPrint)
 // Note(sigmasleep): Should these functions exist in platform layer?
 DEBUG_SET_COLOR(DebugSetColor)
 {
-	SDL_SetRenderDrawColor(GlobalRenderer, (Uint8)R, (Uint8)G, (Uint8)B, (Uint8)A);
+// Note: Not compatible with OpenGL Context
+//	SDL_SetRenderDrawColor(GlobalContext, (Uint8)R, (Uint8)G, (Uint8)B, (Uint8)A);
 }
 
 DEBUG_DRAW_LINE(DebugDrawLine)
 {
-  SDL_RenderDrawLine(GlobalRenderer,
-    (int)X1, (int)Y1,
-    (int)X2, (int)Y2);
+// Note: Not compatible with OpenGL Context
+//  SDL_RenderDrawLine(GlobalContext,
+//    (int)X1, (int)Y1,
+//    (int)X2, (int)Y2);
 }
 
 DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
@@ -79,10 +83,11 @@ DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
 		Position2.Y =
       Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
 
-		SDL_RenderDrawLine(
-      GlobalRenderer,
-			(int)Position1.X, (int)Position1.Y,
-			(int)Position2.X, (int)Position2.Y);
+// Note: Not compatible with OpenGL Context
+//		SDL_RenderDrawLine(
+//      GlobalContext,
+//			(int)Position1.X, (int)Position1.Y,
+//			(int)Position2.X, (int)Position2.Y);
 
 		Position1.X = Position2.X;
 		Position1.Y = Position2.Y;
@@ -90,19 +95,23 @@ DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
 
 	Position2.X = X + cosf(RadAngle) * Radius;
 	Position2.Y = Y + sinf(RadAngle) * Radius;
-	SDL_RenderDrawLine(GlobalRenderer,
-		(int)Position1.X, (int)Position1.Y,
-		(int)Position2.X, (int)Position2.Y);
+
+// Note: Not compatible with OpenGL Context
+//	SDL_RenderDrawLine(GlobalContext,
+//		(int)Position1.X, (int)Position1.Y,
+//		(int)Position2.X, (int)Position2.Y);
 }
 
 DEBUG_DRAW_CIRCLE(DebugDrawCircle)
 {
-	DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
+// Note: Not compatible with OpenGL Context
+//	DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
 }
 
 DEBUG_DRAW_TRIANGLE(DebugDrawTriangle)
 {
-	DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
+// Note: Not compatible with OpenGL Context
+//	DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
 }
 
 DEBUG_DRAW_BOX(DebugDrawBox)
@@ -112,8 +121,9 @@ DEBUG_DRAW_BOX(DebugDrawBox)
 	DrawRect.y = (int)Y;
 	DrawRect.w = (int)Width;
 	DrawRect.h = (int)Height;
-
-	SDL_RenderDrawRect(GlobalRenderer, &DrawRect);
+  
+// Note: Not compatible with OpenGL Context
+//	SDL_RenderDrawRect(GlobalContext, &DrawRect);
 }
 
 DEBUG_FILL_BOX(DebugFillBox)
@@ -124,7 +134,8 @@ DEBUG_FILL_BOX(DebugFillBox)
 	FillRect.w = (int)Width;
 	FillRect.h = (int)Height;
 
-	SDL_RenderFillRect(GlobalRenderer, &FillRect);
+// Note: Not compatible with OpenGL Context
+//	SDL_RenderFillRect(GlobalContext, &FillRect);
 }
 
 typedef void* game_library;
@@ -232,16 +243,16 @@ AllocateMemory(memory *Memory, int size)
 // Note(sigmasleep): This is copy pasted from SDL source in order to use the inner juices.s
 struct _SDL_GameController
 {
-  SDL_Joystick *joystick; /* underlying joystick device */
+  SDL_Joystick *joystick; // underlying joystick device
  // int ref_count;
- // Uint8 hatState[4]; /* the current hat state for this controller */
- // struct _SDL_ControllerMapping mapping; /* the mapping object for this controller */
- // struct _SDL_GameController *next; /* pointer to next game controller we have allocated */
+ // Uint8 hatState[4]; the current hat state for this controller
+ // struct _SDL_ControllerMapping mapping; the mapping object for this controller
+ // struct _SDL_GameController *next; pointer to next game controller we have allocated
 };
 
 struct _SDL_Joystick
 {
-  SDL_JoystickID instance_id; /* Device instance, monotonically increasing from 0 */
+  SDL_JoystickID instance_id; // Device instance, monotonically increasing from 0
 };
 
 int
@@ -249,28 +260,41 @@ main(int argc, char* argv[])
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
 	{
-		return 1;
+		return -1;
 	}
 
-	GlobalWindow = SDL_CreateWindow("SDL Test",
-									SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-									SCREEN_WIDTH, SCREEN_HEIGHT,
-									0);
+	GlobalWindow =
+    SDL_CreateWindow("SphereKoan",
+                     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                     SCREEN_WIDTH, SCREEN_HEIGHT,
+                     SDL_WINDOW_OPENGL);
 
-	GlobalRenderer = SDL_CreateRenderer(GlobalWindow, -1, 0);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+  GlobalContext = SDL_GL_CreateContext(GlobalWindow);
+
+  glewExperimental = GL_TRUE;
+  if(glewInit() != GLEW_OK)
+  {
+    printf("GLEW initialization failure.\n");
+    return -1;
+  } 
 
 	SDL_Event e;
   SDL_GameController *Controllers[4] = {};
   
   int ControllerCount = SDL_NumJoysticks();
-  ControllerCount = ControllerCount > CONTROLLER_MAX ? CONTROLLER_MAX : ControllerCount;
+  ControllerCount =
+    ControllerCount > CONTROLLER_MAX ? CONTROLLER_MAX : ControllerCount;
 
-  for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ++ControllerIndex)
+  for(int ControllerIndex = 0;
+      ControllerIndex < CONTROLLER_MAX;
+      ++ControllerIndex)
   {
-    if (SDL_IsGameController(ControllerIndex))
-    {
+    if(SDL_IsGameController(ControllerIndex))
       Controllers[ControllerIndex] = SDL_GameControllerOpen(ControllerIndex);
-    }
   }
   
   debug_tools DebugTools;
@@ -540,7 +564,7 @@ main(int argc, char* argv[])
 		}
 
 		GameFunctions.UpdateAndRenderGame(&Memory, Dt);
-		SDL_RenderPresent(GlobalRenderer);
+    SDL_GL_SwapWindow(GlobalWindow);
 
 		SDL_Delay(1);
   }
