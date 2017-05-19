@@ -30,7 +30,8 @@ del lock.tmp
 
 echo Compiling Platform EXE
 cl %PlatformCompilerFlags% ..\sdl_main.cpp ^
-   /link %PlatformLinkerFlags% -SUBSYSTEM:windows
+   /link %PlatformLinkerFlags% -SUBSYSTEM:windows ^
+   -OUT:main.exe
 
 echo Copying Required LIBS
 copy %SDL2LibDirectory%\SDL2.dll SDL2.dll
