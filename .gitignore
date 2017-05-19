@@ -1,0 +1,6 @@
+build/*
+!build/main.exe
+!build/*.dll
+
+*.swp
+*.trace
