@@ -152,7 +152,7 @@ struct game_functions
 internal void
 LoadGameFunctions(game_functions *GameFunctions)
 {
-  // Note(sigmasleep): Find a better way to do this?
+  //Note: Find a better way to do this?
   char* BasePath;
   BasePath = SDL_GetBasePath();
   int BasePathLength = GetTerminatedStringLength(BasePath);
@@ -174,14 +174,14 @@ LoadGameFunctions(game_functions *GameFunctions)
   strncpy(CopyFilePath + BasePathLength,
     "gameruntime.dll", sizeof("gameruntime.dll"));
 
-  // Note(sigmasleep): Does this ensure lock?
+  //Note: Does this ensure lock?
   struct stat ThrowAway;
   while(stat("lock.tmp", &ThrowAway) == 0)
   {
     SDL_Delay(1);
   }
 
-  // Todo(sigmasleep): Find a x-platform method?
+  //Todo: Find a x-platform method?
   CopyFile(FilePath, CopyFilePath, FALSE);
   
   GameFunctions->Library = SDL_LoadObject(CopyFilePath);
@@ -203,7 +203,7 @@ LoadGameFunctions(game_functions *GameFunctions)
   }
   else
   {
-    // Todo(sigmasleep): Add debug info/figure out wat do here
+    //Todo: Add debug info/figure out wat do here
   }
 }
 
@@ -229,15 +229,12 @@ UpdateButton(button_state *Button, bool IsDown)
 internal void
 AllocateMemory(memory *Memory, int size)
 {
-  Memory->AllocatedSpace = VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  Memory->AllocatedSpace =
+    VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   if (Memory->AllocatedSpace)
-  {
     Memory->Size = 0;
-  }
   else
-  {
     Memory->Size = -1;
-  }
 }
 
 // Note(sigmasleep): This is copy pasted from SDL source in order to use the inner juices.s
@@ -260,6 +257,7 @@ main(int argc, char* argv[])
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
 	{
+    printf("SDL initialization failure.\n");
 		return -1;
 	}
 
@@ -282,7 +280,6 @@ main(int argc, char* argv[])
     return -1;
   } 
 
-	SDL_Event e;
   SDL_GameController *Controllers[4] = {};
   
   int ControllerCount = SDL_NumJoysticks();
@@ -343,6 +340,7 @@ main(int argc, char* argv[])
     BasePath, BasePathLength);
   strncpy(FilePath + BasePathLength,
     "game.dll", sizeof("game.dll"));
+
   while(GlobalRunning)
   {
 		Dt = (SDL_GetTicks() - LastTime) / 1000.f;
@@ -359,12 +357,15 @@ main(int argc, char* argv[])
     }
 
     {
-      for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ++ControllerIndex)
+      for(int ControllerIndex = 0;
+          ControllerIndex < CONTROLLER_MAX;
+          ++ControllerIndex)
       {
         Input.Controllers[ControllerIndex].WasMovedThisFrame = false;
       }
     }
 
+    SDL_Event e;
 		while(SDL_PollEvent(&e) != 0)
 		{
 			switch(e.type)
@@ -377,17 +378,13 @@ main(int argc, char* argv[])
         {
           SDL_ControllerDeviceEvent Event = e.cdevice;
           DebugPrint("Added: %u", Event.which);
-          if (ControllerCount < CONTROLLER_MAX)
+          if(ControllerCount < CONTROLLER_MAX)
           {
-            //for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
-            //{
-              if (Controllers[Event.which] == NULL)
-              {
-                Controllers[Event.which] = SDL_GameControllerOpen(Event.which);
-                ++ControllerCount;
-              }
-              //else if(Controllers[ControllerIndex])
-            //}
+            if(Controllers[Event.which] == NULL)
+            {
+              Controllers[Event.which] = SDL_GameControllerOpen(Event.which);
+              ++ControllerCount;
+            }
           }
           
         } break;
@@ -395,9 +392,12 @@ main(int argc, char* argv[])
         {
           SDL_ControllerDeviceEvent Event = e.cdevice;
           DebugPrint("Removed: %u", Event.which);
-          for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
+          for(int ControllerIndex = 0;
+              ControllerIndex < ControllerCount;
+              ++ControllerIndex)
           {
-            if (Controllers[ControllerIndex]->joystick->instance_id == Event.which)
+            if(Controllers[ControllerIndex]->joystick->instance_id
+               == Event.which)
             {
               SDL_GameControllerClose(Controllers[ControllerIndex]);
               Controllers[ControllerIndex] = NULL;
@@ -409,32 +409,30 @@ main(int argc, char* argv[])
 				{
 					SDL_ControllerAxisEvent Event = e.caxis;
 
-					// Note(sigmasleep): Deadzone value from mdsn for XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE
-          //#define XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  7849
-          //#define XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE 8689
-          //#define XINPUT_GAMEPAD_TRIGGER_THRESHOLD    30
-					//float InnerDeadzone = 8689.f;
-          // Note(sigmasleep): Normalization via division by int16 min/max values
-					// Subtracting deadzone smooths the linear ramp that would otherwise be cut off.
-          //float NormalizedValue = ABS(Event.value) < Deadzone ? 0.f : Event.value < 0 ?
-					//	(Event.value + Deadzone) / (32768.f - Deadzone) :
-					//	(Event.value - Deadzone) / (32767.f - Deadzone);
+					// Note: Deadzones moved to game layer
+          // XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  7849
+          // XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE 8689
+          // XINPUT_GAMEPAD_TRIGGER_THRESHOLD    30
 
           int ActualControllerIndex = -1;
-          for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
+          for(int ControllerIndex = 0;
+              ControllerIndex < ControllerCount;
+              ++ControllerIndex)
           {
             if (Controllers[ControllerIndex] != NULL
-                && Controllers[ControllerIndex]->joystick->instance_id == Event.which)
+                && Controllers[ControllerIndex]->joystick->instance_id
+                   == Event.which)
             {
               ActualControllerIndex = ControllerIndex;
               break;
             }
           }
 
-          controller_state* Controller = &Input.Controllers[ActualControllerIndex];
+          controller_state* Controller =
+            &Input.Controllers[ActualControllerIndex];
 					if(ActualControllerIndex != -1)
 					{
-						// Todo(sigmasleep): Add timing
+						// Todo: Add timing
             
             float NormalizedValue = Event.value < 0 ?
               Event.value / 32768.f :
@@ -444,7 +442,9 @@ main(int argc, char* argv[])
 						{
 							case SDL_CONTROLLER_AXIS_LEFTX:
 							{
-                Controller->WasMovedThisFrame = Controller->WasMovedThisFrame || Controller->RawX != Event.value;
+                Controller->WasMovedThisFrame =
+                  Controller->WasMovedThisFrame
+                  || Controller->RawX != Event.value;
                 Controller->RawX = Event.value;
 
 								if(Controller->X != NormalizedValue)
@@ -460,7 +460,9 @@ main(int argc, char* argv[])
 							} break;
 							case SDL_CONTROLLER_AXIS_LEFTY:
 							{
-                Controller->WasMovedThisFrame = Controller->WasMovedThisFrame || Controller->RawY != Event.value;
+                Controller->WasMovedThisFrame =
+                  Controller->WasMovedThisFrame
+                  || Controller->RawY != Event.value;
                 Controller->RawY = Event.value;
 
 								if(Controller->Y != NormalizedValue)
@@ -486,10 +488,13 @@ main(int argc, char* argv[])
 					bool IsDown = Event.state == SDL_PRESSED;
 
           int ActualControllerIndex = -1;
-          for (int ControllerIndex = 0; ControllerIndex < ControllerCount; ++ControllerIndex)
+          for(int ControllerIndex = 0;
+              ControllerIndex < ControllerCount;
+              ++ControllerIndex)
           {
             if (Controllers[ControllerIndex] != NULL
-                && Controllers[ControllerIndex]->joystick->instance_id == Event.which)
+                && Controllers[ControllerIndex]->joystick->instance_id
+                   == Event.which)
             {
               ActualControllerIndex = ControllerIndex;
               break;
@@ -498,8 +503,9 @@ main(int argc, char* argv[])
 
 					if(ActualControllerIndex != -1)
 					{
-						// Todo(sigmasleep): Add timing
-            controller_state* Controller = &Input.Controllers[ActualControllerIndex];
+						// Todo: Add timing
+            controller_state* Controller =
+              &Input.Controllers[ActualControllerIndex];
 
             switch(Event.button)
 						{
@@ -537,8 +543,8 @@ main(int argc, char* argv[])
 
 					bool IsDown = Event.state == SDL_PRESSED;
 					
-					// Todo(sigmasleep): Add a way to change which player the keyboard controls
-					// Todo(sigmasleep): Add timing
+					// Todo: Add a way to change which player the keyboard controls
+					// Todo: Add timing
 					controller_state* Controller = &Input.Controllers[0];
 					switch(Event.keysym.scancode)
 					{
