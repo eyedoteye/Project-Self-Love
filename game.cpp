@@ -935,20 +935,17 @@ ResolveCollisions(game_memory *Memory)
 extern "C"
 UPDATE_AND_RENDER_GAME(UpdateAndRenderGame)
 {
-  // Logic (void pointer that uses Dt, entity info, game state, and input state)
-  // CheckCollisions (void pointer that fills in collision info)
-  // MoveAndResolveCollisions (void pointers that use Dt and two info sets that store the collision information and entities involved)
-  // FramEndLogic (void pointer that uses Dt, entity info, game state, and input state)
   game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
+//  GameMemory->CollisionsSize = 0;
 
-  GameMemory->CollisionsSize = 0;
-
+#if 0
   ProcessLogics(GameMemory, Dt);
   CheckCollisions(GameMemory, Dt);
   ResolveCollisions(GameMemory);
   ProcessPostCollisionLogics(GameMemory, Dt);
   //UpdateGame(Memory, Dt);
   RenderDebugArt(GameMemory);
+#endif
 }
 
 extern "C"
