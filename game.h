@@ -160,6 +160,7 @@ struct debug_tools
 };
 global_variable debug_tools *GlobalDebugTools;
 
+// Todo: Move this out of game api?
 struct memory
 {
   int Size;
@@ -172,5 +173,5 @@ typedef LOAD_GAME(load_game);
 #define RELOAD_GAME(name) void name(memory *Memory, debug_tools *DebugTools)
 typedef RELOAD_GAME(reload_game);
 
-#define UPDATE_AND_RENDER_GAME(name) void name(memory *Memory, float Dt)
-typedef UPDATE_AND_RENDER_GAME(update_and_render_game);
+#define UPDATE_GAME(name) void name(memory *Memory, float Dt)
+typedef UPDATE_GAME(update_game);

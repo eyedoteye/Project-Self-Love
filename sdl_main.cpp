@@ -1,5 +1,12 @@
-// Todo(sigmasleep): just create my own string copy, this is stupid
+// Todo: address this
 #define _CRT_SECURE_NO_WARNINGS
+
+#include <assert.h>
+#define ASSERT(...) assert(__VA_ARGS__)
+
+#define internal static
+#define global_variable static
+#define local_persist static
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -7,16 +14,11 @@
 #include <sys/stat.h>
 #include <stdarg.h>
 
-#define internal static
-#define global_variable static
-#define local_persist static
-
 #include "game.h"
+#include "renderer.h"
 
 #include <windows.h>
 #include <stdio.h>
-#define GLEW_STATIC
-#include <GL/glew.h>
 #include <SDL2/SDL.h>
 
 #define Kilobytes(Value) ((Value) * 1024L)
@@ -24,8 +26,6 @@
 #define Gigabytes(Value) (Megabytes(Value) * 1024L)
 
 global_variable bool GlobalRunning = true;
-global_variable SDL_Window *GlobalWindow;
-global_variable SDL_GLContext GlobalContext;
 
 internal int
 GetTerminatedStringLength(char* String)
@@ -42,7 +42,6 @@ GetTerminatedStringLength(char* String)
 
 DEBUG_PRINT(DebugPrint)
 {
-	//int StringLength = GetTerminatedStringLength(OutputString);
 	va_list Arguments;
 	va_start(Arguments, OutputString);
 
@@ -52,159 +51,81 @@ DEBUG_PRINT(DebugPrint)
 	OutputDebugStringA(OutputBuffer);
 }
 
-// Note(sigmasleep): Should these functions exist in platform layer?
-DEBUG_SET_COLOR(DebugSetColor)
+internal void
+GenerateFilepath(
+  char* Filename,
+  char* OutputFilepath, int OutputFilepathBufferSize)
 {
-// Note: Not compatible with OpenGL Context
-//	SDL_SetRenderDrawColor(GlobalContext, (Uint8)R, (Uint8)G, (Uint8)B, (Uint8)A);
+  int FilenameLength = GetTerminatedStringLength(Filename);
+  char* BaseFilepath;
+  BaseFilepath = SDL_GetBasePath();
+  {
+    int BaseFilepathLength = GetTerminatedStringLength(BaseFilepath); 
+    ASSERT(BaseFilepathLength + FilenameLength < OutputFilepathBufferSize);
+    
+    sprintf_s(OutputFilepath, OutputFilepathBufferSize, "%s%s",
+              BaseFilepath, Filename);
+  } SDL_free(BaseFilepath);
 }
 
-DEBUG_DRAW_LINE(DebugDrawLine)
-{
-// Note: Not compatible with OpenGL Context
-//  SDL_RenderDrawLine(GlobalContext,
-//    (int)X1, (int)Y1,
-//    (int)X2, (int)Y2);
-}
-
-DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
-{
-	float RadAngle = Angle * DEG2RAD_CONSTANT;
-
-	vector Position1;
-	vector Position2;
-	Position1.X = X + cosf(RadAngle) * Radius;
-	Position1.Y = Y + sinf(RadAngle) * Radius;
-
-	for(int PointNum = 0; PointNum < Segments; PointNum++)
-	{
-		Position2.X =
-      X + cosf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
-		Position2.Y =
-      Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
-
-// Note: Not compatible with OpenGL Context
-//		SDL_RenderDrawLine(
-//      GlobalContext,
-//			(int)Position1.X, (int)Position1.Y,
-//			(int)Position2.X, (int)Position2.Y);
-
-		Position1.X = Position2.X;
-		Position1.Y = Position2.Y;
-	}
-
-	Position2.X = X + cosf(RadAngle) * Radius;
-	Position2.Y = Y + sinf(RadAngle) * Radius;
-
-// Note: Not compatible with OpenGL Context
-//	SDL_RenderDrawLine(GlobalContext,
-//		(int)Position1.X, (int)Position1.Y,
-//		(int)Position2.X, (int)Position2.Y);
-}
-
-DEBUG_DRAW_CIRCLE(DebugDrawCircle)
-{
-// Note: Not compatible with OpenGL Context
-//	DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
-}
-
-DEBUG_DRAW_TRIANGLE(DebugDrawTriangle)
-{
-// Note: Not compatible with OpenGL Context
-//	DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
-}
-
-DEBUG_DRAW_BOX(DebugDrawBox)
-{
-	SDL_Rect DrawRect;
-	DrawRect.x = (int)X;
-	DrawRect.y = (int)Y;
-	DrawRect.w = (int)Width;
-	DrawRect.h = (int)Height;
-  
-// Note: Not compatible with OpenGL Context
-//	SDL_RenderDrawRect(GlobalContext, &DrawRect);
-}
-
-DEBUG_FILL_BOX(DebugFillBox)
-{
-	SDL_Rect FillRect;
-	FillRect.x = (int)X;
-	FillRect.y = (int)Y;
-	FillRect.w = (int)Width;
-	FillRect.h = (int)Height;
-
-// Note: Not compatible with OpenGL Context
-//	SDL_RenderFillRect(GlobalContext, &FillRect);
-}
-
-typedef void* game_library;
+typedef void* library;
 struct game_functions
 {
   time_t Timestamp;
-  game_library Library;
+  library Library;
 
   load_game *LoadGame;
   reload_game *ReloadGame;
-  update_and_render_game *UpdateAndRenderGame;
+  update_game *UpdateGame;
 };
+
+internal void
+LoadLibraryAs(char *LibraryFilename, char *LibraryCopyFilename,
+              library *OutputLibrary,
+              time_t *Timestamp)
+{
+  char LibraryFilepath[200];
+  GenerateFilepath(LibraryFilename, LibraryFilepath, 200);  
+  
+  char LibraryCopyFilepath[200];
+  GenerateFilepath(LibraryCopyFilename, LibraryCopyFilepath, 200);
+
+  // Note: Does this ensure lock?
+  struct stat ThrowAway;
+  while(stat("lock.tmp", &ThrowAway) == 0)
+    SDL_Delay(1);
+
+  // Todo: Find a x-platform method?
+  CopyFile(LibraryFilepath, LibraryCopyFilepath, FALSE);
+
+  *OutputLibrary = SDL_LoadObject(LibraryCopyFilepath);
+  ASSERT(*OutputLibrary);
+  // Note: Handle a soft-fail for release build.
+  if(*OutputLibrary)
+  {
+    struct stat DLLInfo;
+    stat(LibraryCopyFilepath, &DLLInfo);
+    *Timestamp = DLLInfo.st_mtime;
+  }
+  else
+  {
+    // Todo
+  }
+}
 
 internal void
 LoadGameFunctions(game_functions *GameFunctions)
 {
-  //Note: Find a better way to do this?
-  char* BasePath;
-  BasePath = SDL_GetBasePath();
-  int BasePathLength = GetTerminatedStringLength(BasePath);
-  
-  char FilePath[200];
-  strncpy(
-    FilePath,
-    BasePath, BasePathLength);
-  strncpy(FilePath + BasePathLength,
-    "game.dll", sizeof("game.dll"));
+  LoadLibraryAs("game.dll", "game_runtime.dll",
+                &GameFunctions->Library,
+                &GameFunctions->Timestamp);
 
-  BasePath = SDL_GetBasePath();
-  BasePathLength = GetTerminatedStringLength(BasePath);
-
-  char CopyFilePath[200];
-  strncpy(
-    CopyFilePath,
-    BasePath, BasePathLength);
-  strncpy(CopyFilePath + BasePathLength,
-    "gameruntime.dll", sizeof("gameruntime.dll"));
-
-  //Note: Does this ensure lock?
-  struct stat ThrowAway;
-  while(stat("lock.tmp", &ThrowAway) == 0)
-  {
-    SDL_Delay(1);
-  }
-
-  //Todo: Find a x-platform method?
-  CopyFile(FilePath, CopyFilePath, FALSE);
-  
-  GameFunctions->Library = SDL_LoadObject(CopyFilePath);
-  if(GameFunctions->Library)
-  {
-    struct stat DLLInfo;
-    stat(FilePath, &DLLInfo);
-    GameFunctions->Timestamp = DLLInfo.st_mtime;
-
-    GameFunctions->LoadGame = (load_game*)SDL_LoadFunction(
-      GameFunctions->Library, "LoadGame"
-    );
-    GameFunctions->ReloadGame = (reload_game*)SDL_LoadFunction(
-      GameFunctions->Library, "ReloadGame"
-    );
-    GameFunctions->UpdateAndRenderGame = (update_and_render_game*)SDL_LoadFunction(
-      GameFunctions->Library, "UpdateAndRenderGame"
-    );
-  }
-  else
-  {
-    //Todo: Add debug info/figure out wat do here
-  }
+  GameFunctions->LoadGame =
+    (load_game*)SDL_LoadFunction(GameFunctions->Library, "LoadGame");
+  GameFunctions->ReloadGame =
+    (reload_game*)SDL_LoadFunction(GameFunctions->Library, "ReloadGame");
+  GameFunctions->UpdateGame =
+    (update_game*)SDL_LoadFunction(GameFunctions->Library, "UpdateGame");
 }
 
 internal void
@@ -213,7 +134,44 @@ UnloadGameFunctions(game_functions *GameFunctions)
   SDL_UnloadObject(GameFunctions->Library);
   GameFunctions->Library = NULL;
   GameFunctions->LoadGame = NULL;
-  GameFunctions->UpdateAndRenderGame = NULL;
+  GameFunctions->UpdateGame = NULL;
+}
+
+struct renderer_functions
+{
+  time_t Timestamp;
+  library Library;
+
+  load_renderer *LoadRenderer;
+  reload_renderer *ReloadRenderer;
+  render_game *RenderGame;
+};
+
+internal void
+LoadRendererFunctions(renderer_functions *RendererFunctions)
+{
+  LoadLibraryAs("renderer.dll", "renderer_runtime.dll",
+                &RendererFunctions->Library,
+                &RendererFunctions->Timestamp);
+
+  RendererFunctions->LoadRenderer =
+    (load_renderer*)SDL_LoadFunction(RendererFunctions->Library,
+                                     "LoadRenderer");
+  RendererFunctions->ReloadRenderer =
+    (reload_renderer*)SDL_LoadFunction(RendererFunctions->Library,
+                                       "ReloadRenderer");
+  RendererFunctions->RenderGame =
+    (render_game*)SDL_LoadFunction(RendererFunctions->Library,
+                                   "RenderGame");
+}
+
+internal void
+UnloadRendererFunctions(renderer_functions *RendererFunctions)
+{
+  SDL_UnloadObject(RendererFunctions->Library);
+  RendererFunctions->Library = NULL;
+  RendererFunctions->LoadRenderer = NULL;
+  RendererFunctions->RenderGame = NULL;
 }
 
 internal void
@@ -237,7 +195,7 @@ AllocateMemory(memory *Memory, int size)
     Memory->Size = -1;
 }
 
-// Note(sigmasleep): This is copy pasted from SDL source in order to use the inner juices.s
+// Note: This is copy pasted from SDL source in order to use the inner juices.s
 struct _SDL_GameController
 {
   SDL_Joystick *joystick; // underlying joystick device
@@ -255,30 +213,32 @@ struct _SDL_Joystick
 int
 main(int argc, char* argv[])
 {
-	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
-	{
-    printf("SDL initialization failure.\n");
-		return -1;
-	}
+  memory Memory;
+  AllocateMemory(&Memory, Megabytes(500));
 
-	GlobalWindow =
-    SDL_CreateWindow("SphereKoan",
-                     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                     SCREEN_WIDTH, SCREEN_HEIGHT,
-                     SDL_WINDOW_OPENGL);
-
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  GlobalContext = SDL_GL_CreateContext(GlobalWindow);
-
-  glewExperimental = GL_TRUE;
-  if(glewInit() != GLEW_OK)
   {
-    printf("GLEW initialization failure.\n");
-    return -1;
-  } 
+    int SDL_InitStatus = SDL_Init(SDL_INIT_VIDEO);
+    ASSERT(SDL_InitStatus == 0);
+  }
+
+  SDL_Window *Window =
+   SDL_CreateWindow("SphereKoan",
+                    SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                    SCREEN_WIDTH, SCREEN_HEIGHT,
+                    SDL_WINDOW_OPENGL); 
+  ASSERT(Window != NULL);
+
+  renderer_functions RendererFunctions;
+  LoadRendererFunctions(&RendererFunctions);
+  
+  void *MemoryAllocatedForRenderer =
+    (void *)((size_t)Memory.AllocatedSpace + Megabytes(250));
+  RendererFunctions.LoadRenderer(MemoryAllocatedForRenderer, Window); 
+
+  {
+    int SDL_InitStatus = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+    ASSERT(SDL_InitStatus == 0);
+  }
 
   SDL_GameController *Controllers[4] = {};
   
@@ -296,19 +256,9 @@ main(int argc, char* argv[])
   
   debug_tools DebugTools;
 	DebugTools.Print = DebugPrint;
-  DebugTools.DrawBox = DebugDrawBox;
-  DebugTools.DrawCircle = DebugDrawCircle;
-  DebugTools.DrawLine = DebugDrawLine;
-  DebugTools.DrawSemiCircle = DebugDrawSemiCircle;
-  DebugTools.DrawTriangle = DebugDrawTriangle;
-  DebugTools.FillBox = DebugFillBox;
-  DebugTools.SetColor = DebugSetColor;
 
   game_functions GameFunctions;
   LoadGameFunctions(&GameFunctions);
-
-  memory Memory;
-  AllocateMemory(&Memory, Megabytes(500));
 
   float Dt;
   input_state Input = {};
@@ -564,18 +514,26 @@ main(int argc, char* argv[])
 						{
               UpdateButton(&Controller->Right, IsDown);
 						} break;
+
+            case SDL_SCANCODE_ESCAPE:
+            {
+              if(IsDown)
+                GlobalRunning = false;
+            }
 					}
 				} break;
 			}
 		}
 
-		GameFunctions.UpdateAndRenderGame(&Memory, Dt);
-    SDL_GL_SwapWindow(GlobalWindow);
+    // Todo: Re-attach gamefunctions
+		//GameFunctions.UpdateGame(&Memory, Dt);
+    RendererFunctions.RenderGame(MemoryAllocatedForRenderer);
 
 		SDL_Delay(1);
   }
 
   UnloadGameFunctions(&GameFunctions);
+  UnloadRendererFunctions(&RendererFunctions);
 
 	SDL_Quit();
 
