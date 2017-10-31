@@ -12,7 +12,7 @@ struct vector
 	float Y;
 };
 
-// Note (sigmasleep): WasReleasedSinceLastAction is set true by game layer,
+// Note: WasReleasedSinceLastAction is set true by game layer,
 // and false by api layer.
 // WasReleasedSinceLastAction should be set to TRUE at game start.
 struct button_state

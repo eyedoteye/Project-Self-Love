@@ -1,14 +1,32 @@
 @echo off
 
+IF "%1"=="x86" GOTO StartBatch
+IF "%1"=="x64" GOTO StartBatch 
+GOTO WrongArgs
+:StartBatch
+
+echo Compiling For %1
+
 IF NOT EXIST build mkdir build
 pushd build
 
 del *.pdb > NUL 2>NUL
 
 set IncludesDirectory=..\Includes
-set SDL2LibDirectory=..\Libs\SDL2
-set GLEWLibDirectory=..\Libs\GL
+IF "%1"=="x86" GOTO x86
+IF "%1"=="x64" GOTO x64
 
+:x86
+set SDL2LibDirectory=..\Libs\SDL2\x86-lib
+set GLEWLibDirectory=..\Libs\GL\Win32
+GOTO ContinueBatch
+
+:x64
+set SDL2LibDirectory=..\Libs\SDL2\x64-lib
+set GLEWLibDirectory=..\Libs\GL\x64
+GOTO ContinueBatch
+
+:ContinueBatch
 set CommonCompilerFlags=-MTd -nologo -GR- -Oi -W4 -FC -Z7 -wd4201 -wd4100
 
 set PlatformCompilerFlags=%CommonCompilerFlags% ^
@@ -41,15 +59,25 @@ echo RENDERER DLL LOCK > lock.tmp
 cl %RendererCompilerFlags% ..\renderer.cpp -LD ^
    /link %RendererLinkerFlags% ^
          -PDB:renderer_%random%.pdb ^
+         -NODEFAULTLIB:msvcrtd.lib ^
          -EXPORT:LoadRenderer -EXPORT:ReloadRenderer -Export:RenderGame
+
 del lock.tmp
 
 echo Compiling Platform EXE
 cl %PlatformCompilerFlags% ..\sdl_main.cpp ^
-   /link %PlatformLinkerFlags% -SUBSYSTEM:windows ^
+   /link %PlatformLinkerFlags% ^
+         -SUBSYSTEM:windows ^
          -OUT:main.exe
 
 echo Copying Required LIBS
 copy %SDL2LibDirectory%\SDL2.dll SDL2.dll
 
 popd
+
+GOTO End
+
+:WrongArgs
+  echo Please supply either: x86 x64
+
+:End

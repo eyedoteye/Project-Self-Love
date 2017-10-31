@@ -263,10 +263,12 @@ main(int argc, char* argv[])
   float Dt;
   input_state Input = {};
   
-  for (int ControllerIndex = 0; ControllerIndex < CONTROLLER_MAX; ++ControllerIndex)
+  for(int ControllerIndex = 0;
+      ControllerIndex < CONTROLLER_MAX;
+      ++ControllerIndex)
   {
     controller_state *Controller = &Input.Controllers[ControllerIndex];
-    for (int ButtonIndex = 0; ButtonIndex < BUTTONCOUNT; ++ButtonIndex)
+    for(int ButtonIndex = 0; ButtonIndex < BUTTONCOUNT; ++ButtonIndex)
     {
       Controller->Buttons[ButtonIndex].WasReleasedSinceLastAction = true;
     }

@@ -929,10 +929,10 @@
 //#define PROCESS_ENTITY_LOGIC(name) void name(game_memory *Memory, float Dt)
 ////#define CHECK_COLLISIONS(name) void name(game_memory *Memory) //create/throw away collision states each frame?
 //#define PROCESS_ENTITY_POST_COLLISION_LOGIC(name) void name(game_memory *Memory, float Dt)
-////ProcessLogic can add a collision check to collider stack?
-//
-////Recieves game_memory *Memory && float Dt
-//extern "C"
+//ProcessLogic can add a collision check to collider stack?
+
+//Recieves game_memory *Memory && float Dt
+extern "C"
 UPDATE_GAME(UpdateGame)
 {
   game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
