@@ -8,8 +8,8 @@
 
 struct vector
 {
-	float X;
-	float Y;
+  float X;
+  float Y;
 };
 
 // Note: WasReleasedSinceLastAction is set true by game layer,
@@ -18,61 +18,64 @@ struct vector
 struct button_state
 {
   uint32_t Duration;
-	bool WasReleasedSinceLastAction;
-	bool IsDown;
+  bool WasReleasedSinceLastAction;
+  bool IsDown;
 };
 
 struct controller_state
-{  
+{
   struct
-	{
-		float XLastState;
-		float YLastState;
+  {
+    float XLastState;
+    float YLastState;
     uint32_t Duration;
     int RawX;
     int RawY;
     float X;
-		float Y;
+    float Y;
     bool WasMovedThisFrame;
   };
 
-	union
-	{
+  union
+  {
 #define BUTTONCOUNT 6
-		button_state Buttons[BUTTONCOUNT];
-		struct
-		{
-			button_state Up;
-			button_state Down;
-			button_state Left;
-			button_state Right;
+    button_state Buttons[BUTTONCOUNT];
+    struct
+    {
+      button_state Up;
+      button_state Down;
+      button_state Left;
+      button_state Right;
       button_state RightBumper;
       button_state LeftBumper;
     };
-	};
+  };
 };
 
 struct input_state
 {
-	controller_state Controllers[4];
+  controller_state Controllers[4];
 };
 
 struct baddie
 {
-	vector Position;
-	float Radius;
-	float Angle;
+  vector Position;
+  float Radius;
+  float Angle;
 };
 
-enum entity_type {
+enum entity_type
+{
   HERO, BADDIE, DAGGER
 };
 
-enum dagger_state {
+enum dagger_state
+{
   FIRED, STUCK, RETURNING, RESTING
 };
 
-enum battle_choice {
+enum battle_choice
+{
   NONE, WARPTO, PULLBACK, PUSH
 };
 
@@ -90,23 +93,23 @@ struct dagger
 
 struct hero
 {
-	vector Position;
+  vector Position;
   vector Velocity;
   int CurrentPathIndex;
-	float DirectionFacing;
-	float Radius;
-	float HalfHeight;
+  float DirectionFacing;
+  float Radius;
+  float HalfHeight;
   bool RightBumperNotReleased;
   bool LeftBumperNotReleased;
-   
+
   dagger Dagger;
 };
 
 struct scene
 {
-	hero Hero;
-	baddie Baddies[255];
-	int BaddieCount;
+  hero Hero;
+  baddie Baddies[255];
+  int BaddieCount;
 };
 
 enum game_state
@@ -156,7 +159,7 @@ typedef DEBUG_PRINT(debug_print);
 
 struct debug_tools
 {
-	debug_print *Print;
+  debug_print *Print;
 };
 global_variable debug_tools *GlobalDebugTools;
 

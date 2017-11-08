@@ -1,3 +1,5 @@
+#include <GL/glew.h> //Ignored
+
 struct render_object
 {
   int Type;
@@ -15,46 +17,53 @@ UpdateRenderObject(render_object *Renderable)
   {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Renderable->EBO);
     {
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                   sizeof(*Renderable->Mesh->triangles)
-                     * Renderable->Mesh->ntriangles * 3,
-                   Renderable->Mesh->triangles,
-                   GL_STATIC_DRAW);
+      glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        sizeof(*Renderable->Mesh->triangles)
+        * Renderable->Mesh->ntriangles * 3,
+        Renderable->Mesh->triangles,
+        GL_STATIC_DRAW);
     }
     glBindBuffer(GL_ARRAY_BUFFER, Renderable->PositionVBO);
     {
-      glBufferData(GL_ARRAY_BUFFER,
-                   sizeof(*Renderable->Mesh->points) * 3
-                     * Renderable->Mesh->npoints,
-                   Renderable->Mesh->points,
-                   GL_STATIC_DRAW);
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-                            sizeof(*Renderable->Mesh->points) * 3,
-                            (GLvoid*)0);
+      glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(*Renderable->Mesh->points) * 3
+        * Renderable->Mesh->npoints,
+        Renderable->Mesh->points,
+        GL_STATIC_DRAW);
+      glVertexAttribPointer(
+        0, 3, GL_FLOAT, GL_FALSE,
+        sizeof(*Renderable->Mesh->points) * 3,
+        (GLvoid*)0);
       glEnableVertexAttribArray(0);
     }
     glBindBuffer(GL_ARRAY_BUFFER, Renderable->NormalVBO);
     {
-      glBufferData(GL_ARRAY_BUFFER,
-                   sizeof(*Renderable->Mesh->normals) * 3
-                     * Renderable->Mesh->npoints,
-                   Renderable->Mesh->normals,
-                   GL_STATIC_DRAW);
-      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-                            sizeof(*Renderable->Mesh->normals) * 3,
-                            (GLvoid*)0);
+      glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(*Renderable->Mesh->normals) * 3
+        * Renderable->Mesh->npoints,
+        Renderable->Mesh->normals,
+        GL_STATIC_DRAW);
+      glVertexAttribPointer(
+        1, 3, GL_FLOAT, GL_FALSE,
+        sizeof(*Renderable->Mesh->normals) * 3,
+        (GLvoid*)0);
       glEnableVertexAttribArray(1);
     }
     glBindBuffer(GL_ARRAY_BUFFER, Renderable->UVVBO);
     {
-      glBufferData(GL_ARRAY_BUFFER,
-                   sizeof(*Renderable->Mesh->tcoords) * 2
-                     * Renderable->Mesh->npoints,
-                   Renderable->Mesh->normals,
-                   GL_STATIC_DRAW);
-      glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
-                            sizeof(*Renderable->Mesh->tcoords) * 2,
-                            (GLvoid*)0);
+      glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(*Renderable->Mesh->tcoords) * 2
+        * Renderable->Mesh->npoints,
+        Renderable->Mesh->normals,
+        GL_STATIC_DRAW);
+      glVertexAttribPointer(
+        2, 2, GL_FLOAT, GL_FALSE,
+        sizeof(*Renderable->Mesh->tcoords) * 2,
+        (GLvoid*)0);
       glEnableVertexAttribArray(2);
     } glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
@@ -78,7 +87,7 @@ void
 DrawRenderObject(render_object *Renderable, GLint ShaderID)
 {
   glUniform1i(glGetUniformLocation(ShaderID, "ObjectType"),
-    Renderable->Type); 
+    Renderable->Type);
   glUniformMatrix4fv(glGetUniformLocation(ShaderID, "ModelMatrix"), 1, GL_FALSE,
     glm::value_ptr(Renderable->ModelMatrix));
   glUniform3fv(glGetUniformLocation(ShaderID, "ObjectColor"), 1,

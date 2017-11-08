@@ -1,3 +1,5 @@
+#include <GL/glew.h> //Ignored
+
 struct shader
 {
   GLuint VertexID;

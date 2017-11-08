@@ -30,25 +30,25 @@ global_variable bool GlobalRunning = true;
 internal int
 GetTerminatedStringLength(char* String)
 {
-	int Length = 0;
-	while(*String != '\0')
-	{
-		Length++;
-		String++;
-	}
+  int Length = 0;
+  while(*String != '\0')
+  {
+    Length++;
+    String++;
+  }
 
-	return Length;
+  return Length;
 }
 
 DEBUG_PRINT(DebugPrint)
 {
-	va_list Arguments;
-	va_start(Arguments, OutputString);
+  va_list Arguments;
+  va_start(Arguments, OutputString);
 
-	char OutputBuffer[255];
-	vsnprintf(OutputBuffer, 255, OutputString, Arguments);
-	
-	OutputDebugStringA(OutputBuffer);
+  char OutputBuffer[255];
+  vsnprintf(OutputBuffer, 255, OutputString, Arguments);
+
+  OutputDebugStringA(OutputBuffer);
 }
 
 internal void
@@ -60,9 +60,9 @@ GenerateFilepath(
   char* BaseFilepath;
   BaseFilepath = SDL_GetBasePath();
   {
-    int BaseFilepathLength = GetTerminatedStringLength(BaseFilepath); 
+    int BaseFilepathLength = GetTerminatedStringLength(BaseFilepath);
     ASSERT(BaseFilepathLength + FilenameLength < OutputFilepathBufferSize);
-    
+
     sprintf_s(OutputFilepath, OutputFilepathBufferSize, "%s%s",
               BaseFilepath, Filename);
   } SDL_free(BaseFilepath);
@@ -85,8 +85,8 @@ LoadLibraryAs(char *LibraryFilename, char *LibraryCopyFilename,
               time_t *Timestamp)
 {
   char LibraryFilepath[200];
-  GenerateFilepath(LibraryFilename, LibraryFilepath, 200);  
-  
+  GenerateFilepath(LibraryFilename, LibraryFilepath, 200);
+
   char LibraryCopyFilepath[200];
   GenerateFilepath(LibraryCopyFilename, LibraryCopyFilepath, 200);
 
@@ -178,7 +178,7 @@ internal void
 UpdateButton(button_state *Button, bool IsDown)
 {
   Button->IsDown = IsDown;
-  if (!IsDown)
+  if(!IsDown)
   {
     Button->WasReleasedSinceLastAction = true;
   }
@@ -189,7 +189,7 @@ AllocateMemory(memory *Memory, int size)
 {
   Memory->AllocatedSpace =
     VirtualAlloc(0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-  if (Memory->AllocatedSpace)
+  if(Memory->AllocatedSpace)
     Memory->Size = 0;
   else
     Memory->Size = -1;
@@ -222,18 +222,18 @@ main(int argc, char* argv[])
   }
 
   SDL_Window *Window =
-   SDL_CreateWindow("SphereKoan",
-                    SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                    SCREEN_WIDTH, SCREEN_HEIGHT,
-                    SDL_WINDOW_OPENGL); 
+    SDL_CreateWindow("SphereKoan",
+                     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                     SCREEN_WIDTH, SCREEN_HEIGHT,
+                     SDL_WINDOW_OPENGL);
   ASSERT(Window != NULL);
 
   renderer_functions RendererFunctions;
   LoadRendererFunctions(&RendererFunctions);
-  
+
   void *MemoryAllocatedForRenderer =
     (void *)((size_t)Memory.AllocatedSpace + Megabytes(250));
-  RendererFunctions.LoadRenderer(MemoryAllocatedForRenderer, Window); 
+  RendererFunctions.LoadRenderer(MemoryAllocatedForRenderer, Window);
 
   {
     int SDL_InitStatus = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
@@ -241,7 +241,7 @@ main(int argc, char* argv[])
   }
 
   SDL_GameController *Controllers[4] = {};
-  
+
   int ControllerCount = SDL_NumJoysticks();
   ControllerCount =
     ControllerCount > CONTROLLER_MAX ? CONTROLLER_MAX : ControllerCount;
@@ -253,16 +253,16 @@ main(int argc, char* argv[])
     if(SDL_IsGameController(ControllerIndex))
       Controllers[ControllerIndex] = SDL_GameControllerOpen(ControllerIndex);
   }
-  
+
   debug_tools DebugTools;
-	DebugTools.Print = DebugPrint;
+  DebugTools.Print = DebugPrint;
 
   game_functions GameFunctions;
   LoadGameFunctions(&GameFunctions);
 
   float Dt;
   input_state Input = {};
-  
+
   for(int ControllerIndex = 0;
       ControllerIndex < CONTROLLER_MAX;
       ++ControllerIndex)
@@ -279,10 +279,10 @@ main(int argc, char* argv[])
   GameMemory->Input = &Input;
   GameMemory->Scene = &Scene;
 
-	GameFunctions.LoadGame(&Memory, &DebugTools);
+  GameFunctions.LoadGame(&Memory, &DebugTools);
 
-	uint32_t LastTime = SDL_GetTicks();	
-	
+  uint32_t LastTime = SDL_GetTicks();
+
   char *BasePath = SDL_GetBasePath();
   int BasePathLength = GetTerminatedStringLength(BasePath);
 
@@ -291,12 +291,12 @@ main(int argc, char* argv[])
     FilePath,
     BasePath, BasePathLength);
   strncpy(FilePath + BasePathLength,
-    "game.dll", sizeof("game.dll"));
+          "game.dll", sizeof("game.dll"));
 
   while(GlobalRunning)
   {
-		Dt = (SDL_GetTicks() - LastTime) / 1000.f;
-		LastTime = SDL_GetTicks();
+    Dt = (SDL_GetTicks() - LastTime) / 1000.f;
+    LastTime = SDL_GetTicks();
 
     struct stat DLLInfo;
 
@@ -318,14 +318,14 @@ main(int argc, char* argv[])
     }
 
     SDL_Event e;
-		while(SDL_PollEvent(&e) != 0)
-		{
-			switch(e.type)
-			{
-				case SDL_QUIT:
-				{
-					GlobalRunning = false;
-				} break;
+    while(SDL_PollEvent(&e) != 0)
+    {
+      switch(e.type)
+      {
+        case SDL_QUIT:
+        {
+          GlobalRunning = false;
+        } break;
         case SDL_CONTROLLERDEVICEADDED:
         {
           SDL_ControllerDeviceEvent Event = e.cdevice;
@@ -338,7 +338,7 @@ main(int argc, char* argv[])
               ++ControllerCount;
             }
           }
-          
+
         } break;
         case SDL_CONTROLLERDEVICEREMOVED:
         {
@@ -358,10 +358,10 @@ main(int argc, char* argv[])
           }
         } break;
         case SDL_CONTROLLERAXISMOTION:
-				{
-					SDL_ControllerAxisEvent Event = e.caxis;
+        {
+          SDL_ControllerAxisEvent Event = e.caxis;
 
-					// Note: Deadzones moved to game layer
+          // Note: Deadzones moved to game layer
           // XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  7849
           // XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE 8689
           // XINPUT_GAMEPAD_TRIGGER_THRESHOLD    30
@@ -371,9 +371,9 @@ main(int argc, char* argv[])
               ControllerIndex < ControllerCount;
               ++ControllerIndex)
           {
-            if (Controllers[ControllerIndex] != NULL
-                && Controllers[ControllerIndex]->joystick->instance_id
-                   == Event.which)
+            if(Controllers[ControllerIndex] != NULL
+               && Controllers[ControllerIndex]->joystick->instance_id
+               == Event.which)
             {
               ActualControllerIndex = ControllerIndex;
               break;
@@ -382,101 +382,101 @@ main(int argc, char* argv[])
 
           controller_state* Controller =
             &Input.Controllers[ActualControllerIndex];
-					if(ActualControllerIndex != -1)
-					{
-						// Todo: Add timing
-            
+          if(ActualControllerIndex != -1)
+          {
+            // Todo: Add timing
+
             float NormalizedValue = Event.value < 0 ?
               Event.value / 32768.f :
               Event.value / 32767.f;
 
-						switch(Event.axis)
-						{
-							case SDL_CONTROLLER_AXIS_LEFTX:
-							{
+            switch(Event.axis)
+            {
+              case SDL_CONTROLLER_AXIS_LEFTX:
+              {
                 Controller->WasMovedThisFrame =
                   Controller->WasMovedThisFrame
                   || Controller->RawX != Event.value;
                 Controller->RawX = Event.value;
 
-								if(Controller->X != NormalizedValue)
-								{
-									Controller->XLastState = Controller->X;
+                if(Controller->X != NormalizedValue)
+                {
+                  Controller->XLastState = Controller->X;
 
-									Controller->X = NormalizedValue;
-									char output[255];
-									snprintf(output, 255, "LeftX: %f\n",
-											 NormalizedValue);
-									OutputDebugStringA(output);
-								}
-							} break;
-							case SDL_CONTROLLER_AXIS_LEFTY:
-							{
+                  Controller->X = NormalizedValue;
+                  char output[255];
+                  snprintf(output, 255, "LeftX: %f\n",
+                           NormalizedValue);
+                  OutputDebugStringA(output);
+                }
+              } break;
+              case SDL_CONTROLLER_AXIS_LEFTY:
+              {
                 Controller->WasMovedThisFrame =
                   Controller->WasMovedThisFrame
                   || Controller->RawY != Event.value;
                 Controller->RawY = Event.value;
 
-								if(Controller->Y != NormalizedValue)
-								{
-									Controller->YLastState = Controller->Y;
+                if(Controller->Y != NormalizedValue)
+                {
+                  Controller->YLastState = Controller->Y;
 
-									Controller->Y = NormalizedValue;
+                  Controller->Y = NormalizedValue;
                   char output[255];
-									snprintf(output, 255, "LeftY: %f\n",
-											 NormalizedValue);
-									OutputDebugStringA(output);
-								}
-							} break;
-						}
+                  snprintf(output, 255, "LeftY: %f\n",
+                           NormalizedValue);
+                  OutputDebugStringA(output);
+                }
+              } break;
+            }
 
-					}
-				} break;
-				case SDL_CONTROLLERBUTTONDOWN:
-				case SDL_CONTROLLERBUTTONUP:
-				{
-					SDL_ControllerButtonEvent Event = e.cbutton;
+          }
+        } break;
+        case SDL_CONTROLLERBUTTONDOWN:
+        case SDL_CONTROLLERBUTTONUP:
+        {
+          SDL_ControllerButtonEvent Event = e.cbutton;
 
-					bool IsDown = Event.state == SDL_PRESSED;
+          bool IsDown = Event.state == SDL_PRESSED;
 
           int ActualControllerIndex = -1;
           for(int ControllerIndex = 0;
               ControllerIndex < ControllerCount;
               ++ControllerIndex)
           {
-            if (Controllers[ControllerIndex] != NULL
-                && Controllers[ControllerIndex]->joystick->instance_id
-                   == Event.which)
+            if(Controllers[ControllerIndex] != NULL
+               && Controllers[ControllerIndex]->joystick->instance_id
+               == Event.which)
             {
               ActualControllerIndex = ControllerIndex;
               break;
             }
           }
 
-					if(ActualControllerIndex != -1)
-					{
-						// Todo: Add timing
+          if(ActualControllerIndex != -1)
+          {
+            // Todo: Add timing
             controller_state* Controller =
               &Input.Controllers[ActualControllerIndex];
 
             switch(Event.button)
-						{
-							case SDL_CONTROLLER_BUTTON_DPAD_UP:
-							{
-								UpdateButton(&Controller->Up, IsDown);
-							} break;
-							case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-							{
+            {
+              case SDL_CONTROLLER_BUTTON_DPAD_UP:
+              {
+                UpdateButton(&Controller->Up, IsDown);
+              } break;
+              case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+              {
                 UpdateButton(&Controller->Down, IsDown);
-							} break;
-							case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-							{
+              } break;
+              case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+              {
                 UpdateButton(&Controller->Left, IsDown);
-							} break;
-							case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-							{
+              } break;
+              case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+              {
                 UpdateButton(&Controller->Right, IsDown);
-							} break;
+              } break;
               case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
               {
                 UpdateButton(&Controller->LeftBumper, IsDown);
@@ -485,59 +485,59 @@ main(int argc, char* argv[])
               {
                 UpdateButton(&Controller->RightBumper, IsDown);
               } break;
-						}
-					}
-				} break;
-				case SDL_KEYDOWN:
-				case SDL_KEYUP:
-				{
-					SDL_KeyboardEvent Event = e.key;
+            }
+          }
+        } break;
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:
+        {
+          SDL_KeyboardEvent Event = e.key;
 
-					bool IsDown = Event.state == SDL_PRESSED;
-					
-					// Todo: Add a way to change which player the keyboard controls
-					// Todo: Add timing
-					controller_state* Controller = &Input.Controllers[0];
-					switch(Event.keysym.scancode)
-					{
-						case SDL_SCANCODE_UP:
-						{
+          bool IsDown = Event.state == SDL_PRESSED;
+
+          // Todo: Add a way to change which player the keyboard controls
+          // Todo: Add timing
+          controller_state* Controller = &Input.Controllers[0];
+          switch(Event.keysym.scancode)
+          {
+            case SDL_SCANCODE_UP:
+            {
               UpdateButton(&Controller->Up, IsDown);
-						} break;
-						case SDL_SCANCODE_DOWN:
-						{
-              UpdateButton(&Controller->Down, IsDown);
-						} break;
-						case SDL_SCANCODE_LEFT:
-						{
-              UpdateButton(&Controller->Left, IsDown); 
             } break;
-						case SDL_SCANCODE_RIGHT:
-						{
+            case SDL_SCANCODE_DOWN:
+            {
+              UpdateButton(&Controller->Down, IsDown);
+            } break;
+            case SDL_SCANCODE_LEFT:
+            {
+              UpdateButton(&Controller->Left, IsDown);
+            } break;
+            case SDL_SCANCODE_RIGHT:
+            {
               UpdateButton(&Controller->Right, IsDown);
-						} break;
+            } break;
 
             case SDL_SCANCODE_ESCAPE:
             {
               if(IsDown)
                 GlobalRunning = false;
             }
-					}
-				} break;
-			}
-		}
+          }
+        } break;
+      }
+    }
 
     // Todo: Re-attach gamefunctions
-		//GameFunctions.UpdateGame(&Memory, Dt);
+    GameFunctions.UpdateGame(&Memory, Dt);
     RendererFunctions.RenderGame(MemoryAllocatedForRenderer);
 
-		SDL_Delay(1);
+    SDL_Delay(1);
   }
 
   UnloadGameFunctions(&GameFunctions);
   UnloadRendererFunctions(&RendererFunctions);
 
-	SDL_Quit();
+  SDL_Quit();
 
-	return(0);
+  return(0);
 }

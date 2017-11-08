@@ -4,3 +4,4 @@ build/*
 
 *.swp
 *.trace
+.vs
