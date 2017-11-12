@@ -1,4 +1,5 @@
 #include <GL/glew.h> //Ignored
+#include <stdio.h>
 
 struct shader
 {

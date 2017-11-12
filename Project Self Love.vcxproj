@@ -63,9 +63,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>build.bat</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>build.bat x86</NMakeBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <IncludePath>C:\Users\i.i\Documents\Code\MyWork\SphereKoan\Includes;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\i.i\Documents\Code\MyWork\Project Self Love\Includes;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>build.bat</NMakeBuildCommandLine>
@@ -76,6 +76,7 @@
   <ItemGroup>
     <ClCompile Include="game.cpp" />
     <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="renderer_debug_tools.cpp" />
     <ClCompile Include="render_object.cpp" />
     <ClCompile Include="sdl_main.cpp" />
     <ClCompile Include="shader_object.cpp" />
@@ -158,6 +159,10 @@
     <ClInclude Include="includes\sdl2\SDL_version.h" />
     <ClInclude Include="includes\sdl2\SDL_video.h" />
     <ClInclude Include="renderer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="debug_shader.frag" />
+    <None Include="debug_shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

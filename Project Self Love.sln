@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Somestory", "Somestory.vcxproj", "{B1D56AAC-1ABA-4EF0-837C-618448ED5E88}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Project Self Love", "Project Self Love.vcxproj", "{B1D56AAC-1ABA-4EF0-837C-618448ED5E88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C7DCD897-7703-49C2-929D-C6490B525C19}
+		SolutionGuid = {2727B263-A853-40CA-853B-83B935EFF283}
 	EndGlobalSection
 EndGlobal

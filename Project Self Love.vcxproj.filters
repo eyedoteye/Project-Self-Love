@@ -36,6 +36,9 @@
     <ClCompile Include="shader_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="renderer_debug_tools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h">
@@ -269,5 +272,13 @@
     <ClInclude Include="includes\sdl2\close_code.h">
       <Filter>Header Files\SDL2</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="debug_shader.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="debug_shader.vert">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

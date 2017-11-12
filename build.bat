@@ -46,6 +46,8 @@ set PlatformLinkerFlags=%CommonLinkerFlags% ^
   user32.lib gdi32.lib winmm.lib ^
   -LIBPATH:%SDL2LibDirectory% SDL2.lib SDL2main.lib
 
+IF "%2"=="R" GOTO CompileRenderer
+
 echo Compiling Game DLL
 echo GAME DLL LOCK > lock.tmp
 cl %CommonCompilerFlags% ..\game.cpp -LD ^
@@ -53,7 +55,9 @@ cl %CommonCompilerFlags% ..\game.cpp -LD ^
          -PDB:game_%random%.pdb ^
          -EXPORT:LoadGame -EXPORT:ReloadGame -EXPORT:UpdateGame
 del lock.tmp
+IF "%2"=="G" GOTO End  
 
+:CompileRenderer
 echo Compiling Renderer DLL
 echo RENDERER DLL LOCK > lock.tmp
 cl %RendererCompilerFlags% ..\renderer.cpp -LD ^
@@ -61,8 +65,9 @@ cl %RendererCompilerFlags% ..\renderer.cpp -LD ^
          -PDB:renderer_%random%.pdb ^
          -NODEFAULTLIB:msvcrtd.lib ^
          -EXPORT:LoadRenderer -EXPORT:ReloadRenderer -Export:RenderGame
-
 del lock.tmp
+IF "%2"=="R" GOTO End
+IF "%2"=="GR" GOTO End
 
 echo Compiling Platform EXE
 cl %PlatformCompilerFlags% ..\sdl_main.cpp ^

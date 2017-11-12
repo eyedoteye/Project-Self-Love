@@ -149,20 +149,6 @@ struct game_memory
   float BattleScreenTimer;
 };
 
-// Note: Should be provided by platform layer.
-// Note: Is this the best place for these Debug Functions?
-#define DEBUG_PRINT(name) void name( \
-	char* OutputString,                \
-	...                                \
-)
-typedef DEBUG_PRINT(debug_print);
-
-struct debug_tools
-{
-  debug_print *Print;
-};
-global_variable debug_tools *GlobalDebugTools;
-
 // Todo: Move this out of game api?
 struct memory
 {

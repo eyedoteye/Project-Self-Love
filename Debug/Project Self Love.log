@@ -1,0 +1,11 @@
+﻿  Compiling For x86
+  Compiling Game DLL
+  game.cpp
+     Creating library game.lib and object game.exp
+  Compiling Renderer DLL
+  renderer.cpp
+     Creating library renderer.lib and object renderer.exp
+  Compiling Platform EXE
+  sdl_main.cpp
+  Copying Required LIBS
+          1 file(s) copied.

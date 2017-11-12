@@ -27,6 +27,9 @@
 
 global_variable bool GlobalRunning = true;
 
+global_variable int GlobalScreenWidth = 1280;
+global_variable int GlobalScreenHeight = 1024;
+
 internal int
 GetTerminatedStringLength(char* String)
 {
@@ -50,6 +53,107 @@ DEBUG_PRINT(DebugPrint)
 
   OutputDebugStringA(OutputBuffer);
 }
+
+//// Note: Replace SDL draws with OpenGL equivalent
+//DEBUG_SET_COLOR(DebugSetColor)
+//{
+//  SDL_SetRenderDrawColor(GlobalRenderer,
+//    (Uint8)R, (Uint8)G, (Uint8)B, (Uint8)A);
+//}
+//
+//// Note: Pixels are ints between 0 to ScreenDimension.
+//// Vertices are floats between -1 to 1.
+//inline void NormalizePixelsToVertex(
+//  int X1, int Y1,
+//  int ScreenWidth, int ScreenHeight,
+//  float* Vertex)
+//{
+//  Vertex[0] = (X1 / (float)ScreenWidth) * 2.f - 1.f;
+//  Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
+//}
+//
+//// Todo: Add color specification
+//DEBUG_DRAW_LINE(DebugDrawLine)
+//{
+//  SDL_RenderDrawLine(GlobalRenderer,
+//    (int)X1, (int)Y1,
+//                     (int)X2, (int)Y2);
+//
+//  float StartPoint[2], EndPoint[2];
+//  NormalizePixelsToVertex(
+//    X1, Y1,
+//    GlobalScreenWidth, GlobalScreenHeight,
+//    StartPoint);
+//  NormalizePixelsToVertex(
+//    X2, Y2,
+//    GlobalScreenWidth, GlobalScreenHeight,
+//    EndPoint);
+//
+//  // Todo: Add infastructure for this method in Renderer DLL.
+//  // Send all debug objects of same type into one big VBO
+//  // Then use glDrawArrays
+//  AddVerticesToDebugLineVBO(StartPoint, EndPoint);
+//}
+//
+//DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
+//{
+//  float RadAngle = Angle * DEG2RAD_CONSTANT;
+//
+//  vector Position1;
+//  vector Position2;
+//  Position1.X = X + cosf(RadAngle) * Radius;
+//  Position1.Y = Y + sinf(RadAngle) * Radius;
+//
+//  for(int PointNum = 0; PointNum < Segments; PointNum++)
+//  {
+//    Position2.X = X + cosf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
+//    Position2.Y = Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
+//    DebugDrawLine(
+//      (int)Position1.X, (int)Position1.Y,
+//      (int)Position2.X, (int)Position2.Y);
+//    Position1.X = Position2.X;
+//    Position1.Y = Position2.Y;
+//  }
+//
+//  Position2.X = X + cosf(RadAngle) * Radius;
+//  Position2.Y = Y + sinf(RadAngle) * Radius;
+//  DebugDrawLine(
+//    (int)Position1.X, (int)Position1.Y,
+//    (int)Position2.X, (int)Position2.Y);
+//}
+//
+//DEBUG_DRAW_CIRCLE(DebugDrawCircle)
+//{
+//  DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
+//}
+//
+//DEBUG_DRAW_TRIANGLE(DebugDrawTriangle)
+//{
+//  DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
+//}
+//
+//// Todo: Convert these
+//DEBUG_DRAW_BOX(DebugDrawBox)
+//{
+//  SDL_Rect DrawRect;
+//  DrawRect.x = (int)X;
+//  DrawRect.y = (int)Y;
+//  DrawRect.w = (int)Width;
+//  DrawRect.h = (int)Height;
+//
+//  SDL_RenderDrawRect(GlobalRenderer, &DrawRect);
+//}
+//
+//DEBUG_FILL_BOX(DebugFillBox)
+//{
+//  SDL_Rect FillRect;
+//  FillRect.x = (int)X;
+//  FillRect.y = (int)Y;
+//  FillRect.w = (int)Width;
+//  FillRect.h = (int)Height;
+//
+//  SDL_RenderFillRect(GlobalRenderer, &FillRect);
+//}
 
 internal void
 GenerateFilepath(
@@ -256,6 +360,12 @@ main(int argc, char* argv[])
 
   debug_tools DebugTools;
   DebugTools.Print = DebugPrint;
+  //DebugTools.DrawSemiCircle = DebugDrawSemiCircle;
+  //DebugTools.DrawCircle = DebugDrawCircle;
+  //DebugTools.DrawTriangle = DebugDrawTriangle;
+  //DebugTools.FillBox = DebugFillBox;
+  //DebugTools.DrawLine = DebugDrawLine;
+  //DebugTools.SetColor = DebugSetColor;
 
   game_functions GameFunctions;
   LoadGameFunctions(&GameFunctions);
