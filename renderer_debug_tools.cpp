@@ -58,10 +58,9 @@ void AddSemiCircleToDebugFanBuffer(
 {
   float *VertexBuffer = DebugFanBuffer->VertexBuffer;
   float *ColorBuffer = DebugFanBuffer->ColorBuffer;
-  int *Strides = DebugFanBuffer->Strides;
   int *NextBufferIndex = &DebugFanBuffer->NextIndex;
 
-  float RadAngle = Angle * DEG2RAD_CONSTANT;
+  float RadianAngle = Angle * DEG2RAD_CONSTANT;
 
   CopyVec3ToBuffer(
     VertexBuffer,
@@ -76,13 +75,13 @@ void AddSemiCircleToDebugFanBuffer(
   *NextBufferIndex += 3;
 
   float Position[2];
-  Position[0] = X + cosf(RadAngle) * Radius;
-  Position[1] = Y + sinf(RadAngle) * Radius;
+  Position[0] = X + cosf(RadianAngle) * Radius;
+  Position[1] = Y + sinf(RadianAngle) * Radius;
 
-  for(int VertexNumber = 0; VertexNumber < Segments; VertexNumber++)
+  for(int VertexNumber = 0; VertexNumber <= Segments; VertexNumber++)
   {
-    Position[0] = X + cosf(RadAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
-    Position[1] = Y + sinf(RadAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
+    Position[0] = X + cosf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
+    Position[1] = Y + sinf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
 
     CopyVec3ToBuffer(
       VertexBuffer,
@@ -96,4 +95,10 @@ void AddSemiCircleToDebugFanBuffer(
     );
     *NextBufferIndex += 3;
   }
+
+  int *Count = &DebugFanBuffer->Count;
+  // Add 1 for origin; Add 1 for last vertex
+  // There's always 1 more vertex than segments
+  DebugFanBuffer->Strides[*Count] = Segments + 2;
+  *Count += 1;
 }
