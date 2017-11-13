@@ -14,7 +14,6 @@
 #include "renderer.h"
 #include "renderer_debug_tools.cpp"
 #include "shader_object.cpp"
-#include "game.h"
 
 #include <stdlib.h>
 
@@ -29,9 +28,16 @@ struct renderer_memory
   GLuint DebugLineVAO;
   GLuint DebugLineVertexVBO;
   GLuint DebugLineColorVBO;
+
+  fan_buffer DebugFanBuffer;
+  GLuint DebugFanVAO;
+  GLuint DebugFanVertexVBO;
+  GLuint DebugFanColorVBO;
 };
 
 #define DEBUG_LINE_BUFFER_ARRAY_SIZE 300
+#define DEBUG_FAN_BUFFER_ARRAY_SIZE 300
+#define DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE 100
 
 void DrawDebugLineVAO(
   line_buffer DebugLineBuffer,
@@ -65,6 +71,8 @@ global_variable shader DebugShader;
 extern "C"
 LOAD_RENDERER(LoadRenderer)
 {
+  srand(0); // Purpose: Seeding rand for testing
+
   renderer_memory *RendererMemory = (renderer_memory *)AllocatedMemory;
 
   RendererMemory->Window = Window;
@@ -85,76 +93,113 @@ LOAD_RENDERER(LoadRenderer)
   size_t *NextMemoryPosition = &RendererMemory->NextMemoryPosition;
   *NextMemoryPosition = (size_t)RendererMemory + sizeof(renderer_memory);
 
-  line_buffer *DebugLineBuffer = &RendererMemory->DebugLineBuffer;
 
-  DebugLineBuffer->VertexBuffer = (float*)(*NextMemoryPosition);
-  *NextMemoryPosition += DEBUG_LINE_BUFFER_ARRAY_SIZE * sizeof(float);
-
-  RendererMemory->DebugLineBuffer.ColorBuffer = (float*)(*NextMemoryPosition);
-  *NextMemoryPosition += DEBUG_LINE_BUFFER_ARRAY_SIZE * sizeof(float);
-
-  DebugLineBuffer->NextIndex = 0;
-  // Test: Memory Test
-  //for(int i = 0; i < DEBUG_LINE_BUFFER_ARRAY_SIZE; ++i)
-  //{
-  //  DebugLineBuffer->VertexBuffer[i] = i;
-  //  DebugLineBuffer->ColorBuffer[i] = i;
-  //}
-
-  glGenVertexArrays(1, &RendererMemory->DebugLineVAO);
-  glGenBuffers(1, &RendererMemory->DebugLineVertexVBO);
-  glGenBuffers(1, &RendererMemory->DebugLineColorVBO);
-
-  AddVerticesToDebugLineVBO(
-    &RendererMemory->DebugLineBuffer,
-    TestLineVertices, TestLineColors,
-    4 
-  );
-
-  DebugShader.Name = "DebugPrimitive";
+  if(1) // Purpose: Setup DebugLine related things.
   {
-    DebugShader.VertexSource =
-      #include "debug_shader.vert"
-  }
-  DebugShader.GeometrySource = NULL;
-  {
-    DebugShader.FragmentSource =
-      #include "debug_shader.frag"
-  }
-  compileShader(&DebugShader);
-  linkShader(&DebugShader);
+    line_buffer *DebugLineBuffer = &RendererMemory->DebugLineBuffer;
 
-  glBindVertexArray(RendererMemory->DebugLineVAO);
-  {
-    glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineVertexVBO);
+    DebugLineBuffer->VertexBuffer = (float*)(*NextMemoryPosition);
+    *NextMemoryPosition += DEBUG_LINE_BUFFER_ARRAY_SIZE * sizeof(float);
+
+    DebugLineBuffer->ColorBuffer = (float*)(*NextMemoryPosition);
+    *NextMemoryPosition += DEBUG_LINE_BUFFER_ARRAY_SIZE * sizeof(float);
+
+    DebugLineBuffer->NextIndex = 0;
+
+    // Test: Memory Test
+    //for(int i = 0; i < DEBUG_LINE_BUFFER_ARRAY_SIZE; ++i)
+    //{
+    //  DebugLineBuffer->VertexBuffer[i] = i;
+    //  DebugLineBuffer->ColorBuffer[i] = i;
+    //}
+
+    glGenVertexArrays(1, &RendererMemory->DebugLineVAO);
+    glGenBuffers(1, &RendererMemory->DebugLineVertexVBO);
+    glGenBuffers(1, &RendererMemory->DebugLineColorVBO);
+
+    glBindVertexArray(RendererMemory->DebugLineVAO);
     {
-      glBufferData(
-        GL_ARRAY_BUFFER,
-        sizeof(float) * DebugLineBuffer->NextIndex,
-        DebugLineBuffer->VertexBuffer,
-        GL_STATIC_DRAW);
-      glVertexAttribPointer(
-        0,
-        3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
-        (GLvoid*)0);
-      glEnableVertexAttribArray(0);
+      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineVertexVBO);
+      {
+        glVertexAttribPointer(
+          0,
+          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
+          (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+      }
+      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineColorVBO);
+      {
+        glVertexAttribPointer(
+          1,
+          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
+          (GLvoid*)0);
+        glEnableVertexAttribArray(1);
+      }
     }
-    glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineColorVBO);
+
+    AddVerticesToDebugLineBuffer(
+      &RendererMemory->DebugLineBuffer,
+      TestLineVertices, TestLineColors,
+      4
+    );
+  }
+
+  if(1) // Purpose: Setup DebugFanBuffer
+  {
+    fan_buffer *DebugFanBuffer = &RendererMemory->DebugFanBuffer;
+
+    DebugFanBuffer->VertexBuffer = (float*)(*NextMemoryPosition);
+    *NextMemoryPosition += DEBUG_FAN_BUFFER_ARRAY_SIZE * sizeof(float);
+
+    DebugFanBuffer->ColorBuffer = (float*)(*NextMemoryPosition);
+    *NextMemoryPosition += DEBUG_FAN_BUFFER_ARRAY_SIZE * sizeof(float);
+
+    DebugFanBuffer->Strides = (int*)(*NextMemoryPosition);
+    *NextMemoryPosition += DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE * sizeof(int);
+
+    DebugFanBuffer->NextIndex = 0;
+    DebugFanBuffer->Count = 0;
+
+    glGenVertexArrays(1, &RendererMemory->DebugFanVAO);
+    glGenBuffers(1, &RendererMemory->DebugFanVertexVBO);
+    glGenBuffers(1, &RendererMemory->DebugFanColorVBO);
+
+    glBindVertexArray(RendererMemory->DebugFanVAO);
     {
-      glBufferData(
-        GL_ARRAY_BUFFER,
-        sizeof(float) * DebugLineBuffer->NextIndex,
-        DebugLineBuffer->ColorBuffer,
-        GL_STATIC_DRAW);
-      glVertexAttribPointer(
-        1,
-        3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
-        (GLvoid*)0);
-      glEnableVertexAttribArray(1);
+      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugFanVertexVBO);
+      {
+        glVertexAttribPointer(
+          0,
+          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
+          (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+      }
+      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugFanColorVBO);
+      {
+        glVertexAttribPointer(
+          1,
+          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
+          (GLvoid*)0);
+        glEnableVertexAttribArray(1);
+      }
     }
   }
 
-  srand(0);
+  if(1) // Purpose: Setup Debug Shader
+  {
+    DebugShader.Name = "DebugPrimitive";
+    {
+      DebugShader.VertexSource =
+        #include "debug_shader.vert"
+    }
+    DebugShader.GeometrySource = NULL;
+    {
+      DebugShader.FragmentSource =
+        #include "debug_shader.frag"
+    }
+    compileShader(&DebugShader);
+    linkShader(&DebugShader);
+  }
 }
 
 extern "C"
@@ -219,7 +264,24 @@ RENDER_GAME(RenderGame)
 
       glDrawArrays(GL_LINES, 0, 4);
     }
-    glBindVertexArray(0);
+  }
+
+  if(1) // Purpose: Draw Debug Fan Buffer
+  {
+    glBindVertexArray(RendererMemory->DebugFanVAO);
+    {
+      int *Strides = RendererMemory->DebugFanBuffer.Strides;
+      int ShapeCount = RendererMemory->DebugFanBuffer.Count;
+
+      int BufferIndex = 0;
+      for(int ShapeIndex = 0; ShapeIndex < ShapeCount; ++ShapeIndex)
+      {
+        int VertexCount = Strides[ShapeIndex];
+        glDrawArrays(GL_TRIANGLE_FAN, BufferIndex, VertexCount);
+
+        BufferIndex += VertexCount;
+      }
+    }
   }
 
   SDL_GL_SwapWindow(RendererMemory->Window);

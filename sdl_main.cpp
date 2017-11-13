@@ -16,6 +16,7 @@
 
 #include "game.h"
 #include "renderer.h"
+#include "renderer_debug_tools.cpp"
 
 #include <windows.h>
 #include <stdio.h>
@@ -54,24 +55,24 @@ DEBUG_PRINT(DebugPrint)
   OutputDebugStringA(OutputBuffer);
 }
 
-//// Note: Replace SDL draws with OpenGL equivalent
+// Note: Replace SDL draws with OpenGL equivalent
 //DEBUG_SET_COLOR(DebugSetColor)
 //{
 //  SDL_SetRenderDrawColor(GlobalRenderer,
 //    (Uint8)R, (Uint8)G, (Uint8)B, (Uint8)A);
 //}
-//
-//// Note: Pixels are ints between 0 to ScreenDimension.
-//// Vertices are floats between -1 to 1.
-//inline void NormalizePixelsToVertex(
-//  int X1, int Y1,
-//  int ScreenWidth, int ScreenHeight,
-//  float* Vertex)
-//{
-//  Vertex[0] = (X1 / (float)ScreenWidth) * 2.f - 1.f;
-//  Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
-//}
-//
+
+// Note: Pixels are ints between 0 to ScreenDimension.
+// Vertices are floats between -1 to 1.
+inline void NormalizePixelsToVertex(
+  int X1, int Y1,
+  int ScreenWidth, int ScreenHeight,
+  float* Vertex)
+{
+  Vertex[0] = (X1 / (float)ScreenWidth) * 2.f - 1.f;
+  Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
+}
+
 //// Todo: Add color specification
 //DEBUG_DRAW_LINE(DebugDrawLine)
 //{
@@ -92,7 +93,7 @@ DEBUG_PRINT(DebugPrint)
 //  // Todo: Add infastructure for this method in Renderer DLL.
 //  // Send all debug objects of same type into one big VBO
 //  // Then use glDrawArrays
-//  AddVerticesToDebugLineVBO(StartPoint, EndPoint);
+//  AddVerticesToDebugLineBuffer(GlobalDebugLineBuffer, StartPoint, );
 //}
 //
 //DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
@@ -131,7 +132,7 @@ DEBUG_PRINT(DebugPrint)
 //{
 //  DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
 //}
-//
+
 //// Todo: Convert these
 //DEBUG_DRAW_BOX(DebugDrawBox)
 //{

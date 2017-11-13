@@ -1,28 +1,99 @@
 #include <GL/glew.h> // Ignored
 #include "common.h" // Ignored
 
-global_variable GLuint DebugLineColorBuffer;
-
 struct line_buffer
 {
-  GLfloat *VertexBuffer;
-  GLfloat *ColorBuffer;
+  float *VertexBuffer;
+  float *ColorBuffer;
   int NextIndex;
 };
 
-void AddVerticesToDebugLineVBO(
-  line_buffer* DebugLineBuffer,
-  float* Vertices, float* Colors,
+void AddVerticesToDebugLineBuffer(
+  line_buffer *DebugLineBuffer,
+  float *Vertices, float *Colors,
   int NumberOfVertices)
 {
-  GLfloat *VertexBuffer = DebugLineBuffer->VertexBuffer;
-  GLfloat *ColorBuffer = DebugLineBuffer->ColorBuffer;
-  int *NextBufferIndex = &(DebugLineBuffer->NextIndex);
+  float *VertexBuffer = DebugLineBuffer->VertexBuffer;
+  float *ColorBuffer = DebugLineBuffer->ColorBuffer;
+  int *NextBufferIndex = &DebugLineBuffer->NextIndex;
   int NumberOfFloats = NumberOfVertices * 3;
+
   for(int vertexIndex = 0; vertexIndex < NumberOfFloats; ++vertexIndex)
   {
     VertexBuffer[*NextBufferIndex] = Vertices[vertexIndex];
     ColorBuffer[*NextBufferIndex] = Colors[vertexIndex];
     ++(*NextBufferIndex);
+  }
+}
+
+struct fan_buffer
+{
+  float *VertexBuffer;
+  float *ColorBuffer;
+  int *Strides;
+  int Count;
+  int NextIndex;
+};
+
+inline void CopyVec3ToBuffer(
+  float* Buffer,
+  int StartIndex,
+  float Vec3X, float Vec3Y, float Vec3Z 
+)
+{
+  Buffer[StartIndex] = Vec3X;
+  Buffer[StartIndex + 1] = Vec3Y;
+  Buffer[StartIndex + 2] = Vec3Z;
+}
+
+#define DEG2RAD_CONSTANT PI / 180.f
+void AddSemiCircleToDebugFanBuffer(
+  fan_buffer *DebugFanBuffer,
+  float X, float Y,
+  float Radius,
+  int Segments, int TotalSegments,
+  float Angle,
+  float *Color
+)
+{
+  float *VertexBuffer = DebugFanBuffer->VertexBuffer;
+  float *ColorBuffer = DebugFanBuffer->ColorBuffer;
+  int *Strides = DebugFanBuffer->Strides;
+  int *NextBufferIndex = &DebugFanBuffer->NextIndex;
+
+  float RadAngle = Angle * DEG2RAD_CONSTANT;
+
+  CopyVec3ToBuffer(
+    VertexBuffer,
+    *NextBufferIndex,
+    X, Y, 0.f
+  );
+  CopyVec3ToBuffer(
+    ColorBuffer,
+    *NextBufferIndex,
+    Color[0], Color[1], Color[2]
+  );
+  *NextBufferIndex += 3;
+
+  float Position[2];
+  Position[0] = X + cosf(RadAngle) * Radius;
+  Position[1] = Y + sinf(RadAngle) * Radius;
+
+  for(int VertexNumber = 0; VertexNumber < Segments; VertexNumber++)
+  {
+    Position[0] = X + cosf(RadAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
+    Position[1] = Y + sinf(RadAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
+
+    CopyVec3ToBuffer(
+      VertexBuffer,
+      *NextBufferIndex,
+      Position[0], Position[1], 0.f
+    );
+    CopyVec3ToBuffer(
+      ColorBuffer,
+      *NextBufferIndex,
+      Color[0], Color[1], Color[2]
+    );
+    *NextBufferIndex += 3;
   }
 }
