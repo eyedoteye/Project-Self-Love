@@ -4,7 +4,7 @@
      Creating library game.lib and object game.exp
   Compiling Renderer DLL
   renderer.cpp
-c:\users\i.i\documents\code\mywork\project self love\renderer.cpp(287): warning C4189: 'VertexBuffer': local variable is initialized but not referenced
+c:\users\i.i\documents\code\mywork\project self love\renderer.cpp(294): warning C4189: 'VertexBuffer': local variable is initialized but not referenced
      Creating library renderer.lib and object renderer.exp
   Compiling Platform EXE
   sdl_main.cpp

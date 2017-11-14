@@ -78,7 +78,7 @@ void AddSemiCircleToDebugFanBuffer(
   Position[0] = X + cosf(RadianAngle) * Radius;
   Position[1] = Y + sinf(RadianAngle) * Radius;
 
-  for(int VertexNumber = 0; VertexNumber <= Segments; VertexNumber++)
+  for(int VertexNumber = 0; VertexNumber <= Segments; ++VertexNumber)
   {
     Position[0] = X + cosf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
     Position[1] = Y + sinf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
@@ -100,5 +100,63 @@ void AddSemiCircleToDebugFanBuffer(
   // Add 1 for origin; Add 1 for last vertex
   // There's always 1 more vertex than segments
   DebugFanBuffer->Strides[*Count] = Segments + 2;
+  *Count += 1;
+}
+
+void AddRectToDebugFanBuffer(
+  fan_buffer *DebugFanBuffer,
+  float X, float Y,
+  float Width, float Height,
+  float Angle,
+  float *Color
+)
+{
+  float *VertexBuffer = DebugFanBuffer->VertexBuffer;
+  float *ColorBuffer = DebugFanBuffer->ColorBuffer;
+  int *NextBufferIndex = &DebugFanBuffer->NextIndex;
+
+  float RadianAngle = Angle * DEG2RAD_CONSTANT;
+
+  // Todo: Add screen resolution fixes to (X, Y) coordinates
+  // Since the values are normalized to [-1, 1],
+  // rotation also misplaces the vertex due to stretch/squash.
+  float RotatedHalfVector[2] =
+  {
+    Width / 2.f * (cosf(RadianAngle) - sin(RadianAngle)),
+    Height / 2.f * (sinf(RadianAngle) + cos(RadianAngle))
+  };
+
+  float Vertices[2 * 4] =
+  {
+    X + RotatedHalfVector[0],
+    Y + RotatedHalfVector[1],
+
+    X - RotatedHalfVector[1],
+    Y + RotatedHalfVector[0],
+
+    X - RotatedHalfVector[0],
+    Y - RotatedHalfVector[1],
+
+    X + RotatedHalfVector[1],
+    Y - RotatedHalfVector[0],
+  };
+
+  for(int VertexNumber = 0; VertexNumber < 4 * 2; VertexNumber += 2)
+  {
+    CopyVec3ToBuffer(
+      VertexBuffer,
+      *NextBufferIndex,
+      Vertices[VertexNumber], Vertices[VertexNumber + 1], 0.f
+    );
+    CopyVec3ToBuffer(
+      ColorBuffer,
+      *NextBufferIndex,
+      Color[0], Color[1], Color[2]
+    );
+    *NextBufferIndex += 3;
+  }
+
+  int *Count = &DebugFanBuffer->Count;
+  DebugFanBuffer->Strides[*Count] = 4;
   *Count += 1;
 }

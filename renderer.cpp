@@ -184,16 +184,23 @@ LOAD_RENDERER(LoadRenderer)
       }
     }
 
-    float CircleColor[3] = {
+    float FanColor[3] = {
       1.f, 1.f, 1.f
     };
-    AddSemiCircleToDebugFanBuffer(
+    //AddSemiCircleToDebugFanBuffer(
+    //  DebugFanBuffer,
+    //  0.f, 0.f,
+    //  0.3f,
+    //  80, 80,
+    //  0.f,
+    //  CircleColor
+    //);
+    AddRectToDebugFanBuffer(
       DebugFanBuffer,
       0.f, 0.f,
-      0.3f,
-      80, 80,
-      0.f,
-      CircleColor
+      0.3f, 0.3f,
+      25.f,
+      FanColor
     );
   }
 
@@ -284,7 +291,6 @@ RENDER_GAME(RenderGame)
     {
       fan_buffer* DebugFanBuffer = &RendererMemory->DebugFanBuffer;
 
-      float *VertexBuffer = DebugFanBuffer->VertexBuffer;
       float *ColorBuffer = DebugFanBuffer->ColorBuffer;
       for(int BufferIndex = 1; BufferIndex < DebugFanBuffer->NextIndex; ++BufferIndex)
       {
