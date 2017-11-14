@@ -4,7 +4,10 @@
      Creating library game.lib and object game.exp
   Compiling Renderer DLL
   renderer.cpp
-c:\users\i.i\documents\code\mywork\project self love\renderer.cpp(294): warning C4189: 'VertexBuffer': local variable is initialized but not referenced
+c:\users\i.i\documents\code\mywork\project self love\renderer_debug_tools.cpp(103): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+c:\users\i.i\documents\code\mywork\project self love\renderer_debug_tools.cpp(146): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
+c:\users\i.i\documents\code\mywork\project self love\renderer_debug_tools.cpp(146): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\i.i\documents\code\mywork\project self love\renderer_debug_tools.cpp(170): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
      Creating library renderer.lib and object renderer.exp
   Compiling Platform EXE
   sdl_main.cpp

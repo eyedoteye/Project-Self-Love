@@ -1,6 +1,18 @@
 #include <GL/glew.h> // Ignored
 #include "common.h" // Ignored
 
+global_variable int GlobalScreenWidth = 1280;
+global_variable int GlobalScreenHeight = 1024;
+
+inline void NormalizePixelsToVertex(
+  float X1, float Y1,
+  int ScreenWidth, int ScreenHeight,
+  float* Vertex)
+{
+  Vertex[0] = (X1 / (float)ScreenWidth) * 2.f - 1.f;
+  Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
+}
+
 struct line_buffer
 {
   float *VertexBuffer;
@@ -83,10 +95,17 @@ void AddSemiCircleToDebugFanBuffer(
     Position[0] = X + cosf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
     Position[1] = Y + sinf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
 
+    float Vertex[2];
+    NormalizePixelsToVertex(
+      Position[0], Position[1],
+      GlobalScreenWidth, GlobalScreenHeight,
+      Vertex
+    );
+
     CopyVec3ToBuffer(
       VertexBuffer,
       *NextBufferIndex,
-      Position[0], Position[1], 0.f
+      Vertex[0], Vertex[1], 0.f
     );
     CopyVec3ToBuffer(
       ColorBuffer,
@@ -122,8 +141,8 @@ void AddRectToDebugFanBuffer(
   // rotation also misplaces the vertex due to stretch/squash.
   float RotatedHalfVector[2] =
   {
-    Width / 2.f * (cosf(RadianAngle) - sin(RadianAngle)),
-    Height / 2.f * (sinf(RadianAngle) + cos(RadianAngle))
+    Width / 2.f * (cosf(RadianAngle) - sinf(RadianAngle)),
+    Height / 2.f * (sinf(RadianAngle) + cosf(RadianAngle))
   };
 
   float Vertices[2 * 4] =
@@ -143,10 +162,17 @@ void AddRectToDebugFanBuffer(
 
   for(int VertexNumber = 0; VertexNumber < 4 * 2; VertexNumber += 2)
   {
+    float Vertex[2];
+    NormalizePixelsToVertex(
+      Vertices[VertexNumber], Vertices[VertexNumber + 1],
+      GlobalScreenWidth, GlobalScreenHeight,
+      Vertex
+    );
+
     CopyVec3ToBuffer(
       VertexBuffer,
       *NextBufferIndex,
-      Vertices[VertexNumber], Vertices[VertexNumber + 1], 0.f
+      Vertex[0], Vertex[1], 0.f
     );
     CopyVec3ToBuffer(
       ColorBuffer,

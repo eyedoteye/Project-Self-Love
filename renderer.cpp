@@ -197,8 +197,8 @@ LOAD_RENDERER(LoadRenderer)
     //);
     AddRectToDebugFanBuffer(
       DebugFanBuffer,
-      0.f, 0.f,
-      0.3f, 0.3f,
+      GlobalScreenWidth / 2.f, GlobalScreenHeight / 2.f,
+      50, 50,
       25.f,
       FanColor
     );

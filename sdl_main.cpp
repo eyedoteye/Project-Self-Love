@@ -16,7 +16,6 @@
 
 #include "game.h"
 #include "renderer.h"
-#include "renderer_debug_tools.cpp"
 
 #include <windows.h>
 #include <stdio.h>
@@ -28,8 +27,6 @@
 
 global_variable bool GlobalRunning = true;
 
-global_variable int GlobalScreenWidth = 1280;
-global_variable int GlobalScreenHeight = 1024;
 
 internal int
 GetTerminatedStringLength(char* String)
@@ -64,14 +61,6 @@ DEBUG_PRINT(DebugPrint)
 
 // Note: Pixels are ints between 0 to ScreenDimension.
 // Vertices are floats between -1 to 1.
-inline void NormalizePixelsToVertex(
-  int X1, int Y1,
-  int ScreenWidth, int ScreenHeight,
-  float* Vertex)
-{
-  Vertex[0] = (X1 / (float)ScreenWidth) * 2.f - 1.f;
-  Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
-}
 
 //// Todo: Add color specification
 //DEBUG_DRAW_LINE(DebugDrawLine)
