@@ -59,25 +59,40 @@ inline void CopyVec3ToBuffer(
 }
 
 #define DEG2RAD_CONSTANT PI / 180.f
+
 void AddSemiCircleToDebugFanBuffer(
   fan_buffer *DebugFanBuffer,
   float X, float Y,
   float Radius,
   int Segments, int TotalSegments,
   float Angle,
-  float *Color
+  int R, int G, int B 
 )
 {
+  float Color[3] =
+  {
+    R / 255.f,
+    G / 255.f,
+    B / 255.f
+  };
+
   float *VertexBuffer = DebugFanBuffer->VertexBuffer;
   float *ColorBuffer = DebugFanBuffer->ColorBuffer;
   int *NextBufferIndex = &DebugFanBuffer->NextIndex;
 
   float RadianAngle = Angle * DEG2RAD_CONSTANT;
 
+  float CenterVertex[2];
+  NormalizePixelsToVertex(
+    X, Y,
+    GlobalScreenWidth, GlobalScreenHeight,
+    CenterVertex
+  );
+
   CopyVec3ToBuffer(
     VertexBuffer,
     *NextBufferIndex,
-    X, Y, 0.f
+    CenterVertex[0], CenterVertex[1], 0.f
   );
   CopyVec3ToBuffer(
     ColorBuffer,
@@ -86,12 +101,9 @@ void AddSemiCircleToDebugFanBuffer(
   );
   *NextBufferIndex += 3;
 
-  float Position[2];
-  Position[0] = X + cosf(RadianAngle) * Radius;
-  Position[1] = Y + sinf(RadianAngle) * Radius;
-
   for(int VertexNumber = 0; VertexNumber <= Segments; ++VertexNumber)
   {
+    float Position[2];
     Position[0] = X + cosf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
     Position[1] = Y + sinf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
 
@@ -107,6 +119,7 @@ void AddSemiCircleToDebugFanBuffer(
       *NextBufferIndex,
       Vertex[0], Vertex[1], 0.f
     );
+
     CopyVec3ToBuffer(
       ColorBuffer,
       *NextBufferIndex,
@@ -127,9 +140,16 @@ void AddRectToDebugFanBuffer(
   float X, float Y,
   float Width, float Height,
   float Angle,
-  float *Color
+  int R, int G, int B
 )
 {
+  float Color[3] =
+  {
+    R / 255.f,
+    G / 255.f,
+    B / 255.f
+  };
+
   float *VertexBuffer = DebugFanBuffer->VertexBuffer;
   float *ColorBuffer = DebugFanBuffer->ColorBuffer;
   int *NextBufferIndex = &DebugFanBuffer->NextIndex;

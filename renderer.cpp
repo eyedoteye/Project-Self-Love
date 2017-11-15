@@ -184,23 +184,20 @@ LOAD_RENDERER(LoadRenderer)
       }
     }
 
-    float FanColor[3] = {
-      1.f, 1.f, 1.f
-    };
-    //AddSemiCircleToDebugFanBuffer(
-    //  DebugFanBuffer,
-    //  0.f, 0.f,
-    //  0.3f,
-    //  80, 80,
-    //  0.f,
-    //  CircleColor
-    //);
+    AddSemiCircleToDebugFanBuffer(
+      DebugFanBuffer,
+      GlobalScreenWidth / 4.f, GlobalScreenHeight / 4.f,
+      100,
+      40, 40,
+      0.f,
+      255, 255, 255
+    );
     AddRectToDebugFanBuffer(
       DebugFanBuffer,
       GlobalScreenWidth / 2.f, GlobalScreenHeight / 2.f,
       50, 50,
       25.f,
-      FanColor
+      255, 255, 255
     );
   }
 
