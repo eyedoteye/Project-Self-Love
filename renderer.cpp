@@ -39,33 +39,6 @@ struct renderer_memory
 #define DEBUG_FAN_BUFFER_ARRAY_SIZE 300
 #define DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE 100
 
-void DrawDebugLineVAO(
-  line_buffer DebugLineBuffer,
-  GLuint DebugLineVAO
-)
-{
-  glBindVertexArray(DebugLineVAO);
-  {
-  } glBindVertexArray(0);
-}
-
-global_variable float TestLineVertices[] =
-{
-  .8f, .5f, 0.f,
-  -.5f, -.5f, 0.f,
-
-  -.6f, 0.f, 0.f,
-  .6f, 0.f, 0.f
-};
-global_variable float TestLineColors[] =
-{
-  1.f, 0.f, 0.f,
-  0.f, 0.f, 1.f,
-
-  1.f, 1.f, 0.f,
-  0.f, 1.f, 1.f
-};
-
 global_variable shader DebugShader;
 
 extern "C"
@@ -137,10 +110,17 @@ LOAD_RENDERER(LoadRenderer)
       }
     }
 
-    AddVerticesToDebugLineBuffer(
+    //AddVerticesToDebugLineBuffer(
+    //  &RendererMemory->DebugLineBuffer,
+    //  TestLineVertices, TestLineColors,
+    //  4
+    //);
+
+    AddLineToDebugLineBuffer(
       &RendererMemory->DebugLineBuffer,
-      TestLineVertices, TestLineColors,
-      4
+      800.f, 800.f,
+      1000.f, 1000.f,
+      255, 0, 0
     );
   }
 

@@ -13,6 +13,18 @@ inline void NormalizePixelsToVertex(
   Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
 }
 
+inline void CopyVec3ToBuffer(
+  float* Buffer,
+  int StartIndex,
+  float Vec3X, float Vec3Y, float Vec3Z 
+)
+{
+  Buffer[StartIndex] = Vec3X;
+  Buffer[StartIndex + 1] = Vec3Y;
+  Buffer[StartIndex + 2] = Vec3Z;
+}
+
+
 struct line_buffer
 {
   float *VertexBuffer;
@@ -38,6 +50,62 @@ void AddVerticesToDebugLineBuffer(
   }
 }
 
+void AddLineToDebugLineBuffer(
+  line_buffer *DebugLineBuffer,
+  float X1, float Y1,
+  float X2, float Y2,
+  int R, int G, int B
+)
+{
+  float Color[3] =
+  {
+    R / 255.f,
+    G / 255.f,
+    B / 255.f
+  };
+
+  float *VertexBuffer = DebugLineBuffer->VertexBuffer;
+  float *ColorBuffer = DebugLineBuffer->ColorBuffer;
+  int *NextBufferIndex = &DebugLineBuffer->NextIndex;
+
+  float StartVertex[2];
+  NormalizePixelsToVertex(
+    X1, Y1,
+    GlobalScreenWidth, GlobalScreenHeight,
+    StartVertex 
+  );
+  float EndVertex[2];
+  NormalizePixelsToVertex(
+    X2, Y2,
+    GlobalScreenWidth, GlobalScreenHeight,
+    EndVertex
+  );
+
+  CopyVec3ToBuffer(
+    VertexBuffer,
+    *NextBufferIndex,
+    StartVertex[0], StartVertex[1], 0.f
+  );
+  CopyVec3ToBuffer(
+    ColorBuffer,
+    *NextBufferIndex,
+    Color[0], Color[1], Color[2]
+  );
+  *NextBufferIndex += 3;
+
+  CopyVec3ToBuffer(
+    VertexBuffer,
+    *NextBufferIndex,
+    EndVertex[0], EndVertex[1], 0.f
+  );
+  CopyVec3ToBuffer(
+    ColorBuffer,
+    *NextBufferIndex,
+    Color[0], Color[1], Color[2]
+  );
+  *NextBufferIndex += 3;
+}
+
 struct fan_buffer
 {
   float *VertexBuffer;
@@ -46,17 +114,6 @@ struct fan_buffer
   int Count;
   int NextIndex;
 };
-
-inline void CopyVec3ToBuffer(
-  float* Buffer,
-  int StartIndex,
-  float Vec3X, float Vec3Y, float Vec3Z 
-)
-{
-  Buffer[StartIndex] = Vec3X;
-  Buffer[StartIndex + 1] = Vec3Y;
-  Buffer[StartIndex + 2] = Vec3Z;
-}
 
 #define DEG2RAD_CONSTANT PI / 180.f
 
