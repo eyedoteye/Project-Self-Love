@@ -2,6 +2,9 @@
 #define ASSERT(...) assert(__VA_ARGS__)
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "common.h"
 
 #define internal static
 #define global_variable static
@@ -12,28 +15,261 @@
 #include <GL/glew.h>
 
 #include "renderer.h"
-#include "renderer_debug_tools.cpp"
 #include "shader_object.cpp"
 
-#include <stdlib.h>
+global_variable renderer_memory *GlobalRendererMemory;
 
-struct renderer_memory
+inline void NormalizePixelsToVertex(
+  float X1, float Y1,
+  int ScreenWidth, int ScreenHeight,
+  float *Vertex)
 {
-  size_t NextMemoryPosition;
+  Vertex[0] = (X1 / (float)ScreenWidth) * 2.f - 1.f;
+  Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
+}
 
-  SDL_Window *Window;
-  SDL_GLContext GLContext;
+inline void CopyVec3ToBuffer(
+  float *Buffer,
+  int StartIndex,
+  float Vec3X, float Vec3Y, float Vec3Z 
+)
+{
+  Buffer[StartIndex] = Vec3X;
+  Buffer[StartIndex + 1] = Vec3Y;
+  Buffer[StartIndex + 2] = Vec3Z;
+}
 
-  line_buffer DebugLineBuffer;
-  GLuint DebugLineVAO;
-  GLuint DebugLineVertexVBO;
-  GLuint DebugLineColorVBO;
+//void AddVerticesToDebugLineBuffer(
+//  line_buffer *DebugLineBuffer,
+//  float *Vertices, float *Colors,
+//  int NumberOfVertices)
+//{
+//  float *VertexBuffer = DebugLineBuffer->VertexBuffer;
+//  float *ColorBuffer = DebugLineBuffer->ColorBuffer;
+//  int *NextBufferIndex = &DebugLineBuffer->NextIndex;
+//  int NumberOfFloats = NumberOfVertices * 3;
+//
+//  for(int vertexIndex = 0; vertexIndex < NumberOfFloats; ++vertexIndex)
+//  {
+//    VertexBuffer[*NextBufferIndex] = Vertices[vertexIndex];
+//    ColorBuffer[*NextBufferIndex] = Colors[vertexIndex];
+//    ++(*NextBufferIndex);
+//  }
+//}
 
-  fan_buffer DebugFanBuffer;
-  GLuint DebugFanVAO;
-  GLuint DebugFanVertexVBO;
-  GLuint DebugFanColorVBO;
-};
+void AddLineToDebugLineBuffer(
+  line_buffer *DebugLineBuffer,
+  float X1, float Y1,
+  float X2, float Y2,
+  float R, float G, float B
+)
+{
+  float Color[3] =
+  {
+    R / 255.f,
+    G / 255.f,
+    B / 255.f
+  };
+
+  float *VertexBuffer = DebugLineBuffer->VertexBuffer;
+  float *ColorBuffer = DebugLineBuffer->ColorBuffer;
+  int *NextBufferIndex = &DebugLineBuffer->NextIndex;
+
+  float StartVertex[2];
+  NormalizePixelsToVertex(
+    X1, Y1,
+    GlobalScreenWidth, GlobalScreenHeight,
+    StartVertex 
+  );
+  float EndVertex[2];
+  NormalizePixelsToVertex(
+    X2, Y2,
+    GlobalScreenWidth, GlobalScreenHeight,
+    EndVertex
+  );
+
+  CopyVec3ToBuffer(
+    VertexBuffer,
+    *NextBufferIndex,
+    StartVertex[0], StartVertex[1], 0.f
+  );
+  CopyVec3ToBuffer(
+    ColorBuffer,
+    *NextBufferIndex,
+    Color[0], Color[1], Color[2]
+  );
+  *NextBufferIndex += 3;
+
+  CopyVec3ToBuffer(
+    VertexBuffer,
+    *NextBufferIndex,
+    EndVertex[0], EndVertex[1], 0.f
+  );
+  CopyVec3ToBuffer(
+    ColorBuffer,
+    *NextBufferIndex,
+    Color[0], Color[1], Color[2]
+  );
+  *NextBufferIndex += 3;
+}
+
+
+void AddSemiCircleToDebugFanBuffer(
+  fan_buffer *DebugFanBuffer,
+  float X, float Y,
+  float Radius,
+  int Segments, int TotalSegments,
+  float Angle,
+  float R, float G, float B 
+)
+{
+  float Color[3] =
+  {
+    R / 255.f,
+    G / 255.f,
+    B / 255.f
+  };
+
+  float *VertexBuffer = DebugFanBuffer->VertexBuffer;
+  float *ColorBuffer = DebugFanBuffer->ColorBuffer;
+  int *NextBufferIndex = &DebugFanBuffer->NextIndex;
+
+  float RadianAngle = Angle * DEG2RAD_CONSTANT;
+
+  float CenterVertex[2];
+  NormalizePixelsToVertex(
+    X, Y,
+    GlobalScreenWidth, GlobalScreenHeight,
+    CenterVertex
+  );
+
+  CopyVec3ToBuffer(
+    VertexBuffer,
+    *NextBufferIndex,
+    CenterVertex[0], CenterVertex[1], 0.f
+  );
+  CopyVec3ToBuffer(
+    ColorBuffer,
+    *NextBufferIndex,
+    Color[0], Color[1], Color[2]
+  );
+  *NextBufferIndex += 3;
+
+  for(int VertexNumber = 0; VertexNumber <= Segments; ++VertexNumber)
+  {
+    float Position[2];
+    Position[0] = X + cosf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
+    Position[1] = Y + sinf(RadianAngle + VertexNumber / (float)TotalSegments * PI * 2) * Radius;
+
+    float Vertex[2];
+    NormalizePixelsToVertex(
+      Position[0], Position[1],
+      GlobalScreenWidth, GlobalScreenHeight,
+      Vertex
+    );
+
+    CopyVec3ToBuffer(
+      VertexBuffer,
+      *NextBufferIndex,
+      Vertex[0], Vertex[1], 0.f
+    );
+
+    CopyVec3ToBuffer(
+      ColorBuffer,
+      *NextBufferIndex,
+      Color[0], Color[1], Color[2]
+    );
+    *NextBufferIndex += 3;
+  }
+
+  int *Count = &DebugFanBuffer->Count;
+  // Add 1 for origin; Add 1 for last vertex
+  // There's always 1 more vertex than segments
+  DebugFanBuffer->Strides[*Count] = Segments + 2;
+  *Count += 1;
+}
+
+void AddRectToDebugFanBuffer(
+  fan_buffer *DebugFanBuffer,
+  float X, float Y,
+  float Width, float Height,
+  float Angle,
+  float R, float G, float B
+)
+{
+  float Color[3] =
+  {
+    R / 255.f,
+    G / 255.f,
+    B / 255.f
+  };
+
+  float *VertexBuffer = DebugFanBuffer->VertexBuffer;
+  float *ColorBuffer = DebugFanBuffer->ColorBuffer;
+  int *NextBufferIndex = &DebugFanBuffer->NextIndex;
+
+  float RadianAngle = Angle * DEG2RAD_CONSTANT;
+
+  // Todo: Add screen resolution fixes to (X, Y) coordinates
+  // Since the values are normalized to [-1, 1],
+  // rotation also misplaces the vertex due to stretch/squash.
+  float RotatedHalfVector[2] =
+  {
+    Width / 2.f * (cosf(RadianAngle) - sinf(RadianAngle)),
+    Height / 2.f * (sinf(RadianAngle) + cosf(RadianAngle))
+  };
+
+  float Vertices[2 * 4] =
+  {
+    X + RotatedHalfVector[0],
+    Y + RotatedHalfVector[1],
+
+    X - RotatedHalfVector[1],
+    Y + RotatedHalfVector[0],
+
+    X - RotatedHalfVector[0],
+    Y - RotatedHalfVector[1],
+
+    X + RotatedHalfVector[1],
+    Y - RotatedHalfVector[0],
+  };
+
+  for(int VertexNumber = 0; VertexNumber < 4 * 2; VertexNumber += 2)
+  {
+    float Vertex[2];
+    NormalizePixelsToVertex(
+      Vertices[VertexNumber], Vertices[VertexNumber + 1],
+      GlobalScreenWidth, GlobalScreenHeight,
+      Vertex
+    );
+
+    CopyVec3ToBuffer(
+      VertexBuffer,
+      *NextBufferIndex,
+      Vertex[0], Vertex[1], 0.f
+    );
+    CopyVec3ToBuffer(
+      ColorBuffer,
+      *NextBufferIndex,
+      Color[0], Color[1], Color[2]
+    );
+    *NextBufferIndex += 3;
+  }
+
+  int *Count = &DebugFanBuffer->Count;
+  DebugFanBuffer->Strides[*Count] = 4;
+  *Count += 1;
+}
+
+extern "C" ADD_LINE_TO_RENDERER(AddLineToRenderer)
+{
+  AddLineToDebugLineBuffer(
+    &GlobalRendererMemory->DebugLineBuffer,
+    X1, Y1,
+    X2, Y2,
+    R, G, B
+  );
+}
 
 #define DEBUG_LINE_BUFFER_ARRAY_SIZE 300
 #define DEBUG_FAN_BUFFER_ARRAY_SIZE 300
@@ -47,6 +283,7 @@ LOAD_RENDERER(LoadRenderer)
   srand(0); // Purpose: Seeding rand for testing
 
   renderer_memory *RendererMemory = (renderer_memory *)AllocatedMemory;
+  GlobalRendererMemory = RendererMemory;
 
   RendererMemory->Window = Window;
 
@@ -197,6 +434,7 @@ LOAD_RENDERER(LoadRenderer)
     linkShader(&DebugShader);
   }
 }
+
 
 extern "C"
 RELOAD_RENDERER(ReloadRenderer)

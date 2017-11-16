@@ -76,7 +76,6 @@
   <ItemGroup>
     <ClCompile Include="game.cpp" />
     <ClCompile Include="renderer.cpp" />
-    <ClCompile Include="renderer_debug_tools.cpp" />
     <ClCompile Include="render_object.cpp" />
     <ClCompile Include="sdl_main.cpp" />
     <ClCompile Include="shader_object.cpp" />
@@ -159,8 +158,10 @@
     <ClInclude Include="includes\sdl2\SDL_version.h" />
     <ClInclude Include="includes\sdl2\SDL_video.h" />
     <ClInclude Include="renderer.h" />
+    <ClInclude Include="renderer_debug_tools.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="build.bat" />
     <None Include="debug_shader.frag" />
     <None Include="debug_shader.vert" />
   </ItemGroup>

@@ -64,10 +64,12 @@ cl %RendererCompilerFlags% ..\renderer.cpp -LD ^
    /link %RendererLinkerFlags% ^
          -PDB:renderer_%random%.pdb ^
          -NODEFAULTLIB:msvcrtd.lib ^
-         -EXPORT:LoadRenderer -EXPORT:ReloadRenderer -Export:RenderGame
+         -EXPORT:LoadRenderer -EXPORT:ReloadRenderer -Export:RenderGame ^
+         -EXPORT:AddLineToRenderer
 del lock.tmp
 IF "%2"=="R" GOTO End
 IF "%2"=="GR" GOTO End
+IF "%2"=="RG" GOTO End
 
 echo Compiling Platform EXE
 cl %PlatformCompilerFlags% ..\sdl_main.cpp ^

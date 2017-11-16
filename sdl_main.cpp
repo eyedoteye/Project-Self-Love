@@ -27,7 +27,6 @@
 
 global_variable bool GlobalRunning = true;
 
-
 internal int
 GetTerminatedStringLength(char* String)
 {
@@ -65,24 +64,46 @@ DEBUG_PRINT(DebugPrint)
 //// Todo: Add color specification
 //DEBUG_DRAW_LINE(DebugDrawLine)
 //{
-//  SDL_RenderDrawLine(GlobalRenderer,
-//    (int)X1, (int)Y1,
-//                     (int)X2, (int)Y2);
 //
-//  float StartPoint[2], EndPoint[2];
-//  NormalizePixelsToVertex(
-//    X1, Y1,
-//    GlobalScreenWidth, GlobalScreenHeight,
-//    StartPoint);
-//  NormalizePixelsToVertex(
-//    X2, Y2,
-//    GlobalScreenWidth, GlobalScreenHeight,
-//    EndPoint);
 //
 //  // Todo: Add infastructure for this method in Renderer DLL.
 //  // Send all debug objects of same type into one big VBO
 //  // Then use glDrawArrays
-//  AddVerticesToDebugLineBuffer(GlobalDebugLineBuffer, StartPoint, );
+//}
+
+//
+//void AddSemiCircleToDebugRenderer(
+//  float X, float Y,
+//  float Radius,
+//  int Segments, int TotalSegments,
+//  float Angle,
+//  float R, float G, float B
+//)
+//{
+//  AddSemiCircleToDebugFanBuffer(
+//    &GlobalRendererMemory.DebugFanBuffer,
+//    X, Y,
+//    Radius,
+//    Segments, TotalSegments,
+//    Angle,
+//    R, G, B
+//  );
+//}
+//
+//void AddRectToDebugRenderer(
+//  float X, float Y,
+//  float Width, float Height,
+//  float Angle,
+//  float R, float G, float B
+//)
+//{
+//  AddRectToDebugFanBuffer(
+//    &GlobalRendererMemory.DebugFanBuffer,
+//    X, Y,
+//    Width, Height,
+//    Angle,
+//    R, G, B
+//  );
 //}
 //
 //DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
@@ -148,7 +169,8 @@ DEBUG_PRINT(DebugPrint)
 internal void
 GenerateFilepath(
   char* Filename,
-  char* OutputFilepath, int OutputFilepathBufferSize)
+  char* OutputFilepath, int OutputFilepathBufferSize
+)
 {
   int FilenameLength = GetTerminatedStringLength(Filename);
   char* BaseFilepath;
@@ -239,6 +261,8 @@ struct renderer_functions
   load_renderer *LoadRenderer;
   reload_renderer *ReloadRenderer;
   render_game *RenderGame;
+
+  add_line_to_renderer *AddLineToRenderer;
 };
 
 internal void
@@ -249,14 +273,18 @@ LoadRendererFunctions(renderer_functions *RendererFunctions)
                 &RendererFunctions->Timestamp);
 
   RendererFunctions->LoadRenderer =
-    (load_renderer*)SDL_LoadFunction(RendererFunctions->Library,
-                                     "LoadRenderer");
+    (load_renderer*)SDL_LoadFunction(
+      RendererFunctions->Library, "LoadRenderer");
   RendererFunctions->ReloadRenderer =
-    (reload_renderer*)SDL_LoadFunction(RendererFunctions->Library,
-                                       "ReloadRenderer");
+    (reload_renderer*)SDL_LoadFunction(
+      RendererFunctions->Library, "ReloadRenderer");
   RendererFunctions->RenderGame =
-    (render_game*)SDL_LoadFunction(RendererFunctions->Library,
-                                   "RenderGame");
+    (render_game*)SDL_LoadFunction(
+      RendererFunctions->Library, "RenderGame");
+
+  RendererFunctions->AddLineToRenderer =
+    (add_line_to_renderer*)SDL_LoadFunction(
+      RendererFunctions->Library, "AddLineToRenderer"); 
 }
 
 internal void
@@ -328,6 +356,13 @@ main(int argc, char* argv[])
   void *MemoryAllocatedForRenderer =
     (void *)((size_t)Memory.AllocatedSpace + Megabytes(250));
   RendererFunctions.LoadRenderer(MemoryAllocatedForRenderer, Window);
+
+  RendererFunctions.AddLineToRenderer(
+    500, 500,
+    200, 250,
+    200.4f, 320.6f, 100.f
+  );
+
 
   {
     int SDL_InitStatus = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
