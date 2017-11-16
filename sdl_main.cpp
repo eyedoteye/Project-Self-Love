@@ -71,41 +71,6 @@ DEBUG_PRINT(DebugPrint)
 //  // Then use glDrawArrays
 //}
 
-//
-//void AddSemiCircleToDebugRenderer(
-//  float X, float Y,
-//  float Radius,
-//  int Segments, int TotalSegments,
-//  float Angle,
-//  float R, float G, float B
-//)
-//{
-//  AddSemiCircleToDebugFanBuffer(
-//    &GlobalRendererMemory.DebugFanBuffer,
-//    X, Y,
-//    Radius,
-//    Segments, TotalSegments,
-//    Angle,
-//    R, G, B
-//  );
-//}
-//
-//void AddRectToDebugRenderer(
-//  float X, float Y,
-//  float Width, float Height,
-//  float Angle,
-//  float R, float G, float B
-//)
-//{
-//  AddRectToDebugFanBuffer(
-//    &GlobalRendererMemory.DebugFanBuffer,
-//    X, Y,
-//    Width, Height,
-//    Angle,
-//    R, G, B
-//  );
-//}
-//
 //DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
 //{
 //  float RadAngle = Angle * DEG2RAD_CONSTANT;
@@ -263,6 +228,8 @@ struct renderer_functions
   render_game *RenderGame;
 
   add_line_to_renderer *AddLineToRenderer;
+  add_semicircle_to_renderer *AddSemicircleToRenderer;
+  add_rect_to_renderer *AddRectToRenderer;
 };
 
 internal void
@@ -285,6 +252,12 @@ LoadRendererFunctions(renderer_functions *RendererFunctions)
   RendererFunctions->AddLineToRenderer =
     (add_line_to_renderer*)SDL_LoadFunction(
       RendererFunctions->Library, "AddLineToRenderer"); 
+  RendererFunctions->AddSemicircleToRenderer =
+    (add_semicircle_to_renderer*)SDL_LoadFunction(
+      RendererFunctions->Library, "AddSemicircleToRenderer"); 
+  RendererFunctions->AddRectToRenderer =
+    (add_rect_to_renderer*)SDL_LoadFunction(
+      RendererFunctions->Library, "AddRectToRenderer"); 
 }
 
 internal void
@@ -362,7 +335,24 @@ main(int argc, char* argv[])
     200, 250,
     200.4f, 320.6f, 100.f
   );
-
+  RendererFunctions.AddLineToRenderer(
+    800.f, 800.f,
+    1000.f, 1000.f,
+    255, 0, 0
+  );
+  RendererFunctions.AddSemicircleToRenderer(
+    GlobalScreenWidth / 4.f, GlobalScreenHeight / 4.f,
+    100,
+    40, 40,
+    0.f,
+    255, 255, 255
+  );
+  RendererFunctions.AddRectToRenderer(
+    GlobalScreenWidth / 2.f, GlobalScreenHeight / 2.f,
+    50, 50,
+    25.f,
+    255, 255, 255
+  );
 
   {
     int SDL_InitStatus = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);

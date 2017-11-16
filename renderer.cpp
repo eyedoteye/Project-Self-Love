@@ -271,6 +271,29 @@ extern "C" ADD_LINE_TO_RENDERER(AddLineToRenderer)
   );
 }
 
+extern "C" ADD_SEMICIRCLE_TO_RENDERER(AddSemicircleToRenderer)
+{
+  AddSemiCircleToDebugFanBuffer(
+    &GlobalRendererMemory->DebugFanBuffer,
+    X, Y,
+    Radius,
+    Segments, TotalSegments,
+    Angle,
+    R, G, B
+  );
+}
+
+extern "C" ADD_RECT_TO_RENDERER(AddRectToRenderer)
+{
+  AddRectToDebugFanBuffer(
+    &GlobalRendererMemory->DebugFanBuffer,
+    X, Y,
+    Width, Height,
+    Angle,
+    R, G, B
+  );
+}
+
 #define DEBUG_LINE_BUFFER_ARRAY_SIZE 300
 #define DEBUG_FAN_BUFFER_ARRAY_SIZE 300
 #define DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE 100
@@ -346,19 +369,6 @@ LOAD_RENDERER(LoadRenderer)
         glEnableVertexAttribArray(1);
       }
     }
-
-    //AddVerticesToDebugLineBuffer(
-    //  &RendererMemory->DebugLineBuffer,
-    //  TestLineVertices, TestLineColors,
-    //  4
-    //);
-
-    AddLineToDebugLineBuffer(
-      &RendererMemory->DebugLineBuffer,
-      800.f, 800.f,
-      1000.f, 1000.f,
-      255, 0, 0
-    );
   }
 
   if(1) // Purpose: Setup DebugFanBuffer
@@ -400,22 +410,6 @@ LOAD_RENDERER(LoadRenderer)
         glEnableVertexAttribArray(1);
       }
     }
-
-    AddSemiCircleToDebugFanBuffer(
-      DebugFanBuffer,
-      GlobalScreenWidth / 4.f, GlobalScreenHeight / 4.f,
-      100,
-      40, 40,
-      0.f,
-      255, 255, 255
-    );
-    AddRectToDebugFanBuffer(
-      DebugFanBuffer,
-      GlobalScreenWidth / 2.f, GlobalScreenHeight / 2.f,
-      50, 50,
-      25.f,
-      255, 255, 255
-    );
   }
 
   if(1) // Purpose: Setup Debug Shader

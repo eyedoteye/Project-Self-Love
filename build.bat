@@ -65,7 +65,7 @@ cl %RendererCompilerFlags% ..\renderer.cpp -LD ^
          -PDB:renderer_%random%.pdb ^
          -NODEFAULTLIB:msvcrtd.lib ^
          -EXPORT:LoadRenderer -EXPORT:ReloadRenderer -Export:RenderGame ^
-         -EXPORT:AddLineToRenderer
+         -EXPORT:AddLineToRenderer -EXPORT:AddSemicircleToRenderer -Export:AddRectToRenderer
 del lock.tmp
 IF "%2"=="R" GOTO End
 IF "%2"=="GR" GOTO End
