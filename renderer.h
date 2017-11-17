@@ -13,8 +13,8 @@ typedef RENDER_GAME(render_game);
 
 #define DEG2RAD_CONSTANT PI / 180.f
 
-global_variable int GlobalScreenWidth = 1280;
-global_variable int GlobalScreenHeight = 1024;
+global_variable int GlobalScreenWidth = 480;
+global_variable int GlobalScreenHeight = 270;
 
 
 #define ADD_LINE_TO_RENDERER(name) void name(\

@@ -249,6 +249,7 @@ void AddRectToDebugFanBuffer(
   // Todo: Add screen resolution fixes to (X, Y) coordinates
   // Since the values are normalized to [-1, 1],
   // rotation also misplaces the vertex due to stretch/squash.
+  
   float RotatedHalfVector[2] =
   {
     Width / 2.f * (cosf(RadianAngle) - sinf(RadianAngle)),
@@ -260,14 +261,14 @@ void AddRectToDebugFanBuffer(
     X + RotatedHalfVector[0],
     Y + RotatedHalfVector[1],
 
-    X - RotatedHalfVector[1],
-    Y + RotatedHalfVector[0],
+    X - RotatedHalfVector[0],
+    Y + RotatedHalfVector[1],
 
     X - RotatedHalfVector[0],
     Y - RotatedHalfVector[1],
 
-    X + RotatedHalfVector[1],
-    Y - RotatedHalfVector[0],
+    X + RotatedHalfVector[0],
+    Y - RotatedHalfVector[1],
   };
 
   for(int VertexNumber = 0; VertexNumber < 4 * 2; VertexNumber += 2)
@@ -330,9 +331,9 @@ extern "C" ADD_RECT_TO_RENDERER(AddRectToRenderer)
   );
 }
 
-#define DEBUG_LINE_BUFFER_ARRAY_SIZE 300
-#define DEBUG_FAN_BUFFER_ARRAY_SIZE 300
-#define DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE 100
+#define DEBUG_LINE_BUFFER_ARRAY_SIZE 3000
+#define DEBUG_FAN_BUFFER_ARRAY_SIZE 3000
+#define DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE 1000
 
 global_variable shader DebugShader;
 
@@ -477,9 +478,11 @@ RENDER_GAME(RenderGame)
 {
   renderer_memory *RendererMemory = (renderer_memory *)AllocatedMemory;
 
+  glUseProgram(DebugShader.ID);
+  glClear(GL_COLOR_BUFFER_BIT);
+
   if(1) // Purpose: Draw Debug Line Buffer
   {
-    glUseProgram(DebugShader.ID);
     glBindVertexArray(RendererMemory->DebugLineVAO);
     {
       line_buffer* DebugLineBuffer = &RendererMemory->DebugLineBuffer;
@@ -536,28 +539,28 @@ RENDER_GAME(RenderGame)
     {
       fan_buffer* DebugFanBuffer = &RendererMemory->DebugFanBuffer;
 
-      float *ColorBuffer = DebugFanBuffer->ColorBuffer;
-      for(int BufferIndex = 1; BufferIndex < DebugFanBuffer->NextIndex; ++BufferIndex)
-      {
-        ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .02f;
-        if(ColorBuffer[BufferIndex] > 1.f)
-        {
-          ColorBuffer[BufferIndex] = 1.f;
-        }
-        else if(ColorBuffer[BufferIndex] < -1.f)
-        {
-          ColorBuffer[BufferIndex] = -1.f;
-        }
-      }
-      ColorBuffer[0] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
-      if(ColorBuffer[0] > 1.f)
-      {
-        ColorBuffer[0] = 1.f;
-      }
-      else if(ColorBuffer[0] < -1.f)
-      {
-        ColorBuffer[0] = -1.f;
-      }
+      //float *ColorBuffer = DebugFanBuffer->ColorBuffer;
+      //for(int BufferIndex = 1; BufferIndex < DebugFanBuffer->NextIndex; ++BufferIndex)
+      //{
+      //  ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .02f;
+      //  if(ColorBuffer[BufferIndex] > 1.f)
+      //  {
+      //    ColorBuffer[BufferIndex] = 1.f;
+      //  }
+      //  else if(ColorBuffer[BufferIndex] < -1.f)
+      //  {
+      //    ColorBuffer[BufferIndex] = -1.f;
+      //  }
+      //}
+      //ColorBuffer[0] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
+      //if(ColorBuffer[0] > 1.f)
+      //{
+      //  ColorBuffer[0] = 1.f;
+      //}
+      //else if(ColorBuffer[0] < -1.f)
+      //{
+      //  ColorBuffer[0] = -1.f;
+      //}
 
       glBindVertexArray(RendererMemory->DebugFanVAO);
       {
@@ -591,6 +594,14 @@ RENDER_GAME(RenderGame)
         BufferIndex += VertexCount;
       }
     }
+  }
+  
+  if(1) // Purpose: Clear debug buffers
+  {
+    RendererMemory->DebugLineBuffer.NextIndex = 0;
+    
+    RendererMemory->DebugFanBuffer.Count = 0;
+    RendererMemory->DebugFanBuffer.NextIndex = 0;
   }
 
   SDL_GL_SwapWindow(RendererMemory->Window);
