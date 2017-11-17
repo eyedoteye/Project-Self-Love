@@ -17,7 +17,41 @@
 #include "renderer.h"
 #include "shader_object.cpp"
 
+struct line_buffer
+{
+  GLfloat *VertexBuffer;
+  GLfloat *ColorBuffer;
+  int NextIndex;
+};
+
+struct fan_buffer
+{
+  GLfloat *VertexBuffer;
+  GLfloat *ColorBuffer;
+  int *Strides;
+  int Count;
+  int NextIndex;
+};
+
+struct renderer_memory
+{
+  size_t NextMemoryPosition;
+
+  SDL_Window *Window;
+  SDL_GLContext GLContext;
+
+  line_buffer DebugLineBuffer;
+  GLuint DebugLineVAO;
+  GLuint DebugLineVertexVBO;
+  GLuint DebugLineColorVBO;
+
+  fan_buffer DebugFanBuffer;
+  GLuint DebugFanVAO;
+  GLuint DebugFanVertexVBO;
+  GLuint DebugFanColorVBO;
+};
 global_variable renderer_memory *GlobalRendererMemory;
+
 
 // Note: Pixels are ints between 0 to ScreenDimension.
 // Vertices are floats between -1 to 1.
@@ -492,7 +526,7 @@ RENDER_GAME(RenderGame)
           GL_STATIC_DRAW);
       }
 
-      glDrawArrays(GL_LINES, 0, 4);
+      glDrawArrays(GL_LINES, 0, DebugLineBuffer->NextIndex / 3);
     }
   }
 

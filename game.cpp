@@ -958,7 +958,12 @@ LOAD_GAME(LoadGame)
   //game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
 
   GlobalDebugTools->SetColor(0, 255, 0, 0);
-  GlobalDebugTools->DrawLine(0, 300, 900, 0);
+  GlobalDebugTools->DrawLine(0, 300, 900, 300);
+  GlobalDebugTools->DrawBox(200, 200, 800, 300);
+  GlobalDebugTools->DrawSemiCircle(900, 900, 100, 18, 31, 140);
+  GlobalDebugTools->DrawCircle(800, 800, 80, 5);
+  GlobalDebugTools->DrawTriangle(500, 500, 45, 60);
+  GlobalDebugTools->FillBox(30, 30, 300, 90);
 #if 0
   scene *Scene = GameMemory->Scene;
 

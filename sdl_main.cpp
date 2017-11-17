@@ -105,65 +105,60 @@ DEBUG_DRAW_LINE(DebugDrawLine)
   );
 }
 
-//DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
-//{
-//  float RadAngle = Angle * DEG2RAD_CONSTANT;
-//
-//  vector Position1;
-//  vector Position2;
-//  Position1.X = X + cosf(RadAngle) * Radius;
-//  Position1.Y = Y + sinf(RadAngle) * Radius;
-//
-//  for(int PointNum = 0; PointNum < Segments; PointNum++)
-//  {
-//    Position2.X = X + cosf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
-//    Position2.Y = Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
-//    DebugDrawLine(
-//      (int)Position1.X, (int)Position1.Y,
-//      (int)Position2.X, (int)Position2.Y);
-//    Position1.X = Position2.X;
-//    Position1.Y = Position2.Y;
-//  }
-//
-//  Position2.X = X + cosf(RadAngle) * Radius;
-//  Position2.Y = Y + sinf(RadAngle) * Radius;
-//  DebugDrawLine(
-//    (int)Position1.X, (int)Position1.Y,
-//    (int)Position2.X, (int)Position2.Y);
-//}
-//
-//DEBUG_DRAW_CIRCLE(DebugDrawCircle)
-//{
-//  DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
-//}
-//
-//DEBUG_DRAW_TRIANGLE(DebugDrawTriangle)
-//{
-//  DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
-//}
+DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
+{
+  GlobalRendererFunctions->AddSemicircleToRenderer(
+    X, Y,
+    Radius,
+    Segments, TotalSegments,
+    Angle,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+}
 
-//// Todo: Convert these
-//DEBUG_DRAW_BOX(DebugDrawBox)
-//{
-//  SDL_Rect DrawRect;
-//  DrawRect.x = (int)X;
-//  DrawRect.y = (int)Y;
-//  DrawRect.w = (int)Width;
-//  DrawRect.h = (int)Height;
-//
-//  SDL_RenderDrawRect(GlobalRenderer, &DrawRect);
-//}
-//
-//DEBUG_FILL_BOX(DebugFillBox)
-//{
-//  SDL_Rect FillRect;
-//  FillRect.x = (int)X;
-//  FillRect.y = (int)Y;
-//  FillRect.w = (int)Width;
-//  FillRect.h = (int)Height;
-//
-//  SDL_RenderFillRect(GlobalRenderer, &FillRect);
-//}
+DEBUG_DRAW_CIRCLE(DebugDrawCircle)
+{
+  DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
+}
+
+DEBUG_DRAW_TRIANGLE(DebugDrawTriangle)
+{
+  DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
+}
+
+DEBUG_DRAW_BOX(DebugDrawBox)
+{
+  GlobalRendererFunctions->AddLineToRenderer(
+    X, Y,
+    X + Width, Y,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+  GlobalRendererFunctions->AddLineToRenderer(
+    X + Width, Y,
+    X + Width, Y + Height,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+  GlobalRendererFunctions->AddLineToRenderer(
+    X + Width, Y + Height,
+    X, Y + Height,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+  GlobalRendererFunctions->AddLineToRenderer(
+    X, Y + Height,
+    X, Y,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+}
+
+DEBUG_FILL_BOX(DebugFillBox)
+{
+  GlobalRendererFunctions->AddRectToRenderer(
+    X + Width / 2, Y + Height / 2,
+    Width, Height,
+    0.f,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+}
 
 internal void
 GenerateFilepath(
@@ -385,10 +380,11 @@ main(int argc, char* argv[])
 
   debug_tools DebugTools;
   DebugTools.Print = DebugPrint;
-  //DebugTools.DrawSemiCircle = DebugDrawSemiCircle;
-  //DebugTools.DrawCircle = DebugDrawCircle;
-  //DebugTools.DrawTriangle = DebugDrawTriangle;
-  //DebugTools.FillBox = DebugFillBox;
+  DebugTools.DrawSemiCircle = DebugDrawSemiCircle;
+  DebugTools.DrawCircle = DebugDrawCircle;
+  DebugTools.DrawTriangle = DebugDrawTriangle;
+  DebugTools.FillBox = DebugFillBox;
+  DebugTools.DrawBox = DebugDrawBox;
   DebugTools.DrawLine = DebugDrawLine;
   DebugTools.SetColor = DebugSetColor;
 
