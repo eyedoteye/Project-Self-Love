@@ -19,6 +19,8 @@
 
 global_variable renderer_memory *GlobalRendererMemory;
 
+// Note: Pixels are ints between 0 to ScreenDimension.
+// Vertices are floats between -1 to 1.
 inline void NormalizePixelsToVertex(
   float X1, float Y1,
   int ScreenWidth, int ScreenHeight,

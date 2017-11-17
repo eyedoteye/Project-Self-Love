@@ -954,10 +954,12 @@ UPDATE_GAME(UpdateGame)
 extern "C"
 LOAD_GAME(LoadGame)
 {
-#if 0
   GlobalDebugTools = DebugTools;
-  game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
+  //game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
 
+  GlobalDebugTools->SetColor(0, 255, 0, 0);
+  GlobalDebugTools->DrawLine(0, 300, 900, 0);
+#if 0
   scene *Scene = GameMemory->Scene;
 
   scene ClearedScene = {};

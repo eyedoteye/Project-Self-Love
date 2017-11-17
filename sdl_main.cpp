@@ -25,7 +25,34 @@
 #define Megabytes(Value) (Kilobytes(Value) * 1024L)
 #define Gigabytes(Value) (Megabytes(Value) * 1024L)
 
+typedef void* library;
+struct game_functions
+{
+  time_t Timestamp;
+  library Library;
+
+  load_game *LoadGame;
+  reload_game *ReloadGame;
+  update_game *UpdateGame;
+};
+
+struct renderer_functions
+{
+  time_t Timestamp;
+  library Library;
+
+  load_renderer *LoadRenderer;
+  reload_renderer *ReloadRenderer;
+  render_game *RenderGame;
+
+  add_line_to_renderer *AddLineToRenderer;
+  add_semicircle_to_renderer *AddSemicircleToRenderer;
+  add_rect_to_renderer *AddRectToRenderer;
+};
+
 global_variable bool GlobalRunning = true;
+
+global_variable renderer_functions *GlobalRendererFunctions;
 
 internal int
 GetTerminatedStringLength(char* String)
@@ -51,25 +78,32 @@ DEBUG_PRINT(DebugPrint)
   OutputDebugStringA(OutputBuffer);
 }
 
+struct color
+{
+  float R, G, B, A;
+};
+global_variable color CurrentDebugColor =
+{
+  0.f, 0.f, 0.f, 1.f
+};
 // Note: Replace SDL draws with OpenGL equivalent
-//DEBUG_SET_COLOR(DebugSetColor)
-//{
-//  SDL_SetRenderDrawColor(GlobalRenderer,
-//    (Uint8)R, (Uint8)G, (Uint8)B, (Uint8)A);
-//}
+DEBUG_SET_COLOR(DebugSetColor)
+{
+  // Todo: Replace int parameters to float on game layer
+  CurrentDebugColor.R = (float)R;
+  CurrentDebugColor.G = (float)G;
+  CurrentDebugColor.B = (float)B;
+  CurrentDebugColor.A = (float)A; // Currently ignored
+}
 
-// Note: Pixels are ints between 0 to ScreenDimension.
-// Vertices are floats between -1 to 1.
-
-//// Todo: Add color specification
-//DEBUG_DRAW_LINE(DebugDrawLine)
-//{
-//
-//
-//  // Todo: Add infastructure for this method in Renderer DLL.
-//  // Send all debug objects of same type into one big VBO
-//  // Then use glDrawArrays
-//}
+DEBUG_DRAW_LINE(DebugDrawLine)
+{
+  GlobalRendererFunctions->AddLineToRenderer(
+    X1, Y1,
+    X2, Y2,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+}
 
 //DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
 //{
@@ -149,17 +183,6 @@ GenerateFilepath(
   } SDL_free(BaseFilepath);
 }
 
-typedef void* library;
-struct game_functions
-{
-  time_t Timestamp;
-  library Library;
-
-  load_game *LoadGame;
-  reload_game *ReloadGame;
-  update_game *UpdateGame;
-};
-
 internal void
 LoadLibraryAs(char *LibraryFilename, char *LibraryCopyFilename,
               library *OutputLibrary,
@@ -217,20 +240,6 @@ UnloadGameFunctions(game_functions *GameFunctions)
   GameFunctions->LoadGame = NULL;
   GameFunctions->UpdateGame = NULL;
 }
-
-struct renderer_functions
-{
-  time_t Timestamp;
-  library Library;
-
-  load_renderer *LoadRenderer;
-  reload_renderer *ReloadRenderer;
-  render_game *RenderGame;
-
-  add_line_to_renderer *AddLineToRenderer;
-  add_semicircle_to_renderer *AddSemicircleToRenderer;
-  add_rect_to_renderer *AddRectToRenderer;
-};
 
 internal void
 LoadRendererFunctions(renderer_functions *RendererFunctions)
@@ -329,8 +338,9 @@ main(int argc, char* argv[])
   void *MemoryAllocatedForRenderer =
     (void *)((size_t)Memory.AllocatedSpace + Megabytes(250));
   RendererFunctions.LoadRenderer(MemoryAllocatedForRenderer, Window);
+  GlobalRendererFunctions = &RendererFunctions;
 
-  RendererFunctions.AddLineToRenderer(
+  /*RendererFunctions.AddLineToRenderer(
     500, 500,
     200, 250,
     200.4f, 320.6f, 100.f
@@ -352,7 +362,7 @@ main(int argc, char* argv[])
     50, 50,
     25.f,
     255, 255, 255
-  );
+  );*/
 
   {
     int SDL_InitStatus = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
@@ -379,8 +389,8 @@ main(int argc, char* argv[])
   //DebugTools.DrawCircle = DebugDrawCircle;
   //DebugTools.DrawTriangle = DebugDrawTriangle;
   //DebugTools.FillBox = DebugFillBox;
-  //DebugTools.DrawLine = DebugDrawLine;
-  //DebugTools.SetColor = DebugSetColor;
+  DebugTools.DrawLine = DebugDrawLine;
+  DebugTools.SetColor = DebugSetColor;
 
   game_functions GameFunctions;
   LoadGameFunctions(&GameFunctions);
