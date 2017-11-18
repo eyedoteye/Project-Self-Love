@@ -481,86 +481,37 @@ RENDER_GAME(RenderGame)
   glUseProgram(DebugShader.ID);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  if(1) // Purpose: Draw Debug Line Buffer
-  {
-    glBindVertexArray(RendererMemory->DebugLineVAO);
-    {
-      line_buffer* DebugLineBuffer = &RendererMemory->DebugLineBuffer;
-
-      float *VertexBuffer = DebugLineBuffer->VertexBuffer;
-      float *ColorBuffer = DebugLineBuffer->ColorBuffer;
-      for(int BufferIndex = 0; BufferIndex < DebugLineBuffer->NextIndex; ++BufferIndex)
-      {
-        VertexBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
-        if(VertexBuffer[BufferIndex] > 1.f)
-        {
-          VertexBuffer[BufferIndex] = 1.f;
-        }
-        else if(VertexBuffer[BufferIndex] < -1.f)
-        {
-          VertexBuffer[BufferIndex] = -1.f;
-        }
-
-        ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
-        if(ColorBuffer[BufferIndex] > 1.f)
-        {
-          ColorBuffer[BufferIndex] = 1.f;
-        }
-        else if(ColorBuffer[BufferIndex] < -1.f)
-        {
-          ColorBuffer[BufferIndex] = -1.f;
-        }
-      }
-
-      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineVertexVBO);
-      {
-        glBufferData(
-          GL_ARRAY_BUFFER,
-          sizeof(float) * DebugLineBuffer->NextIndex,
-          DebugLineBuffer->VertexBuffer,
-          GL_STATIC_DRAW);
-      }
-      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineColorVBO);
-      {
-        glBufferData(
-          GL_ARRAY_BUFFER,
-          sizeof(float) * DebugLineBuffer->NextIndex,
-          DebugLineBuffer->ColorBuffer,
-          GL_STATIC_DRAW);
-      }
-
-      glDrawArrays(GL_LINES, 0, DebugLineBuffer->NextIndex / 3);
-    }
-  }
-
   if(1) // Purpose: Draw Debug Fan Buffer
   {
     glBindVertexArray(RendererMemory->DebugFanVAO);
     {
       fan_buffer* DebugFanBuffer = &RendererMemory->DebugFanBuffer;
 
-      //float *ColorBuffer = DebugFanBuffer->ColorBuffer;
-      //for(int BufferIndex = 1; BufferIndex < DebugFanBuffer->NextIndex; ++BufferIndex)
-      //{
-      //  ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .02f;
-      //  if(ColorBuffer[BufferIndex] > 1.f)
-      //  {
-      //    ColorBuffer[BufferIndex] = 1.f;
-      //  }
-      //  else if(ColorBuffer[BufferIndex] < -1.f)
-      //  {
-      //    ColorBuffer[BufferIndex] = -1.f;
-      //  }
-      //}
-      //ColorBuffer[0] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
-      //if(ColorBuffer[0] > 1.f)
-      //{
-      //  ColorBuffer[0] = 1.f;
-      //}
-      //else if(ColorBuffer[0] < -1.f)
-      //{
-      //  ColorBuffer[0] = -1.f;
-      //}
+      if(0) // Purpose: Shift Up The Colors Randomly
+      {
+        float *ColorBuffer = DebugFanBuffer->ColorBuffer;
+        for(int BufferIndex = 1; BufferIndex < DebugFanBuffer->NextIndex; ++BufferIndex)
+        {
+          ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .02f;
+          if(ColorBuffer[BufferIndex] > 1.f)
+          {
+            ColorBuffer[BufferIndex] = 1.f;
+          }
+          else if(ColorBuffer[BufferIndex] < -1.f)
+          {
+            ColorBuffer[BufferIndex] = -1.f;
+          }
+        }
+        ColorBuffer[0] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
+        if(ColorBuffer[0] > 1.f)
+        {
+          ColorBuffer[0] = 1.f;
+        }
+        else if(ColorBuffer[0] < -1.f)
+        {
+          ColorBuffer[0] = -1.f;
+        }
+      }
 
       glBindVertexArray(RendererMemory->DebugFanVAO);
       {
@@ -595,6 +546,63 @@ RENDER_GAME(RenderGame)
       }
     }
   }
+
+  if(1) // Purpose: Draw Debug Line Buffer
+  {
+    glBindVertexArray(RendererMemory->DebugLineVAO);
+    {
+      line_buffer* DebugLineBuffer = &RendererMemory->DebugLineBuffer;
+
+      if(1) // Purpose: Shift Up The Lines Randomly
+      {
+        float *VertexBuffer = DebugLineBuffer->VertexBuffer;
+        float *ColorBuffer = DebugLineBuffer->ColorBuffer;
+        for(int BufferIndex = 0; BufferIndex < DebugLineBuffer->NextIndex; ++BufferIndex)
+        {
+          VertexBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
+          if(VertexBuffer[BufferIndex] > 1.f)
+          {
+            VertexBuffer[BufferIndex] = 1.f;
+          }
+          else if(VertexBuffer[BufferIndex] < -1.f)
+          {
+            VertexBuffer[BufferIndex] = -1.f;
+          }
+
+          ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
+          if(ColorBuffer[BufferIndex] > 1.f)
+          {
+            ColorBuffer[BufferIndex] = 1.f;
+          }
+          else if(ColorBuffer[BufferIndex] < -1.f)
+          {
+            ColorBuffer[BufferIndex] = -1.f;
+          }
+        }
+      }
+
+      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineVertexVBO);
+      {
+        glBufferData(
+          GL_ARRAY_BUFFER,
+          sizeof(float) * DebugLineBuffer->NextIndex,
+          DebugLineBuffer->VertexBuffer,
+          GL_STATIC_DRAW);
+      }
+      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineColorVBO);
+      {
+        glBufferData(
+          GL_ARRAY_BUFFER,
+          sizeof(float) * DebugLineBuffer->NextIndex,
+          DebugLineBuffer->ColorBuffer,
+          GL_STATIC_DRAW);
+      }
+
+      glDrawArrays(GL_LINES, 0, DebugLineBuffer->NextIndex / 3);
+    }
+  }
+
+
   
   if(1) // Purpose: Clear debug buffers
   {
