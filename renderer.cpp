@@ -61,7 +61,7 @@ inline void NormalizePixelsToVertex(
   float *Vertex)
 {
   Vertex[0] = (X1 / (float)ScreenWidth) * 2.f - 1.f;
-  Vertex[1] = (Y1 / (float)ScreenHeight) * 2.f - 1.f;
+  Vertex[1] = ((ScreenHeight - Y1) / (float)ScreenHeight) * 2.f - 1.f;
 }
 
 inline void CopyVec3ToBuffer(
