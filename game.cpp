@@ -40,11 +40,11 @@ BaddieMovement(baddie *Baddie, float Dt)
 internal void
 RenderBaddie(baddie *Baddie)
 {
-  GlobalDebugTools->DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
+  GlobalDebugTools->DrawSemicircle(Baddie->Position.X, Baddie->Position.Y,
                                    Baddie->Radius,
                                    16, 32,
                                    Baddie->Angle);
-  GlobalDebugTools->DrawSemiCircle(Baddie->Position.X, Baddie->Position.Y,
+  GlobalDebugTools->DrawSemicircle(Baddie->Position.X, Baddie->Position.Y,
                                    Baddie->Radius,
                                    16, 32,
                                    Baddie->Angle + 180);
@@ -937,171 +937,7 @@ ResolveCollisions(game_memory *Memory)
 
 
 
-//internal void
-//RenderDebugArt(game_memory *Memory)
-//{
-//  if(Memory->GameState == BATTLESCREEN)
-//  {
-//    GlobalDebugTools->SetColor((int)(255 * Memory->BattleScreenTimer / 10.f), 0, 0, 255);
-//    GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-//  }
-//  else
-//  {
-//    GlobalDebugTools->SetColor(0, 200, 0, 255);
-//    GlobalDebugTools->FillBox(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-//
-//    GlobalDebugTools->SetColor(0, 255, 0, 255);
-//    GlobalDebugTools->DrawBox(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4,
-//                              SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
-//  }
-//  #if 1
-//  vector Point[4];
-//  Point[0].X = 10;
-//  Point[0].Y = 10;
-//  Point[1].X = SCREEN_WIDTH - 10;
-//  Point[1].Y = 10;
-//  Point[2].X = SCREEN_WIDTH - 10;
-//  Point[2].Y = SCREEN_HEIGHT - 10;
-//  Point[3].X = 10;
-//  Point[3].Y = SCREEN_HEIGHT - 10;
-//
-//  Memory->Scene->Hero.Position.X += Memory->Scene->Hero.Velocity.X;
-//  Memory->Scene->Hero.Position.Y += Memory->Scene->Hero.Velocity.Y;
-//
-//  for(int PointIndex = 0; PointIndex < 4; PointIndex++)
-//  {
-//    vector CollisionVector;
-//
-//    vector *Point1 = &Point[PointIndex];
-//    vector *Point2 = &Point[(PointIndex + 11) % 4];
-//
-//    if(FillCollisionVectorCircleToLineWithVelocity(
-//      &CollisionVector,
-//      Memory->Scene->Hero.Position.X,
-//      Memory->Scene->Hero.Position.Y,
-//      Memory->Scene->Hero.Radius,
-//      Memory->Scene->Hero.Velocity.X,
-//      Memory->Scene->Hero.Velocity.Y,
-//      Point1->X, Point1->Y, Point2->X, Point2->Y
-//    ))
-//    {
-//      Memory->Scene->Hero.Position.X += CollisionVector.X;
-//      Memory->Scene->Hero.Position.Y += CollisionVector.Y;
-//    }
-//    GlobalDebugTools->DrawLine(Point1->X, Point1->Y, Point2->X, Point2->Y);
-//  }
-//
-//  /*if (IsPointLeftHandToLine(
-//    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
-//    RandomPoint1.X, RandomPoint1.Y,
-//    RandomPoint2.X, RandomPoint2.Y))
-//  {
-//    GlobalDebugTools->SetColor(255, 0, 255, 255);
-//  }
-//  else
-//  {
-//    GlobalDebugTools->SetColor(0, 0, 255, 255);
-//  }*/
-//
-//
-//  if(Memory->GameState == BATTLESCREEN)
-//  {
-//    RenderBaddie(Memory->Scene->Hero.Dagger.BaddieStuckTo);
-//  }
-//  else
-//  {
-//    for(int BaddieIndex = 0; BaddieIndex < Memory->Scene->BaddieCount; BaddieIndex++)
-//    {
-//      RenderBaddie(&Memory->Scene->Baddies[BaddieIndex]);
-//    }
-//  }
-//
-//  GlobalDebugTools->DrawTriangle(
-//    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
-//    Memory->Scene->Hero.DirectionFacing,
-//    Memory->Scene->Hero.HalfHeight);
-//
-//  vector RandomPoint3;
-//  RandomPoint3.X = Memory->Scene->Hero.Position.X;
-//  RandomPoint3.Y = Memory->Scene->Hero.Position.Y;
-//
-//  vector HeroDirection;
-//  HeroDirection.X = cosf(Memory->Scene->Hero.DirectionFacing * DEG2RAD_CONSTANT);
-//  HeroDirection.Y = sinf(Memory->Scene->Hero.DirectionFacing * DEG2RAD_CONSTANT);
-//
-//  vector RandomPoint4;
-//  RandomPoint4.X = RandomPoint3.X + HeroDirection.X * 60;
-//  RandomPoint4.Y = RandomPoint3.Y + HeroDirection.Y * 60;
-//  GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
-//
-//  /*CollisionVector = {};
-//
-//  if (FillCollisionVectorLineToLine(
-//    &CollisionVector,
-//    RandomPoint3.X, RandomPoint3.Y,
-//    RandomPoint4.X, RandomPoint4.Y,
-//    RandomPoint1.X, RandomPoint1.Y,
-//    RandomPoint2.X, RandomPoint2.Y))
-//  {
-//
-//    vector Point;
-//    Point.X = RandomPoint3.X - CollisionVector.X;
-//    Point.Y = RandomPoint3.Y - CollisionVector.Y;
-//
-//    GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, Point.X, Point.Y);
-//
-//    GlobalDebugTools->SetColor(255, 255, 255, 255);
-//
-//    GlobalDebugTools->DrawLine(
-//      RandomPoint4.X, RandomPoint4.Y,
-//      Point.X, Point.Y);
-//  }
-//  else
-//  {
-//    GlobalDebugTools->DrawLine(RandomPoint3.X, RandomPoint3.Y, RandomPoint4.X, RandomPoint4.Y);
-//  }*/
-//
-//  GlobalDebugTools->SetColor(255, 255, 255, 255);
-//  GlobalDebugTools->DrawCircle(
-//    Memory->Scene->Hero.Dagger.Position.X,
-//    Memory->Scene->Hero.Dagger.Position.Y,
-//    Memory->Scene->Hero.Dagger.Radius,
-//    12
-//  );
-//
-//  #endif
-//  GlobalDebugTools->SetColor(0, 0, 255, 255);
-//  GlobalDebugTools->DrawCircle(
-//    Memory->Scene->Hero.Position.X, Memory->Scene->Hero.Position.Y,
-//    Memory->Scene->Hero.Radius, 32);
-//
-//  GlobalDebugTools->SetColor(255, 255, 255, 255);
-//  GlobalDebugTools->DrawCircle(
-//    80, 80, 50, 50
-//  );
-//
-//  vector ProcessedInput;
-//  ProcessControllerMovement(&Memory->Input->Controllers[0], &ProcessedInput);
-//  GlobalDebugTools->SetColor(255, 0, 255, 255);
-//  GlobalDebugTools->DrawCircle(
-//    80 + ProcessedInput.X * 50,
-//    80 + ProcessedInput.Y * 50,
-//    3, 10
-//  );
-//  GlobalDebugTools->SetColor(0, 0, 0, 255);
-//  GlobalDebugTools->DrawCircle(
-//    80 + Memory->Input->Controllers[0].X * 50,
-//    80 + Memory->Input->Controllers[0].Y * 50,
-//    3, 10
-//  );
-//  GlobalDebugTools->SetColor(255, 0, 0, 255);
-//  GlobalDebugTools->DrawCircle(
-//    80, 80, 2, 8
-//  );
-//  GlobalDebugTools->DrawCircle(
-//    80, 80, 1, 1
-//  );
-//}
+
 //Recieves game_memory *Memory && float Dt
 extern "C"
 UPDATE_GAME(UpdateGame)
@@ -1109,25 +945,25 @@ UPDATE_GAME(UpdateGame)
   game_memory *GameMemory = (game_memory*)Memory->AllocatedSpace;
   GameMemory->CollisionsSize = 0;
 
-
-  //GlobalDebugTools->SetColor(0, 255, 0, 0);
-  //GlobalDebugTools->DrawLine(0, 300, 900, 300);
-  //GlobalDebugTools->DrawBox(200, 200, 800, 300);
-  //GlobalDebugTools->DrawSemiCircle(900, 900, 100, 18, 31, 140);
-  //GlobalDebugTools->DrawCircle(800, 800, 80, 5);
-  //GlobalDebugTools->DrawTriangle(500, 500, 45, 60);
-  //GlobalDebugTools->FillBox(30, 30, 300, 90);
-
-
-#if 1
+ #if 1
   ProcessLogics(GameMemory, Dt);
   CheckCollisions(GameMemory, Dt);
   ResolveCollisions(GameMemory);
   ProcessPostCollisionLogics(GameMemory, Dt);
-  //UpdateGame(Memory, Dt);
-
 #endif
   RenderDebugArt(GameMemory);
+
+  GlobalDebugTools->SetColor(0, 155, 155, 0);
+  //GlobalDebugTools->DrawLine(0, 300, 900, 300);
+  //GlobalDebugTools->DrawBox(200, 200, 800, 300);
+  //GlobalDebugTools->DrawSemicircle(100, 100, 10, 18, 31, 140);
+  GlobalDebugTools->FillSemicircle(
+    SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f, 80,
+    18, 31,
+    140);
+  GlobalDebugTools->FillCircle(200, 200, 20, 5);
+  GlobalDebugTools->FillTriangle(400, 200, 45, 60);
+  //GlobalDebugTools->FillBox(30, 30, 300, 90);
 }
 
 extern "C"

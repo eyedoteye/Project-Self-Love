@@ -105,7 +105,41 @@ DEBUG_DRAW_LINE(DebugDrawLine)
   );
 }
 
-DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
+DEBUG_DRAW_SEMICIRCLE(DebugDrawSemicircle)
+{
+  float RadAngle = Angle * DEG2RAD_CONSTANT;
+
+  vector Position1;
+  vector Position2;
+  Position1.X = X + cosf(RadAngle) * Radius;
+  Position1.Y = Y + sinf(RadAngle) * Radius;
+
+  for(int PointNum = 0; PointNum < Segments; PointNum++)
+  {
+    Position2.X = X + cosf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
+    Position2.Y = Y + sinf(RadAngle + PointNum / (float)TotalSegments * PI * 2) * Radius;
+
+    GlobalRendererFunctions->AddLineToRenderer(
+      Position1.X, Position1.Y,
+      Position2.X, Position2.Y,
+      CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+    );
+
+    Position1.X = Position2.X;
+    Position1.Y = Position2.Y;
+  }
+
+  Position2.X = X + cosf(RadAngle) * Radius;
+  Position2.Y = Y + sinf(RadAngle) * Radius;
+
+  GlobalRendererFunctions->AddLineToRenderer(
+    Position1.X, Position1.Y,
+    Position2.X, Position2.Y,
+    CurrentDebugColor.R, CurrentDebugColor.G, CurrentDebugColor.B
+  );
+ }
+
+DEBUG_FILL_SEMICIRCLE(DebugFillSemicircle)
 {
   GlobalRendererFunctions->AddSemicircleToRenderer(
     X, Y,
@@ -116,14 +150,25 @@ DEBUG_DRAW_SEMI_CIRCLE(DebugDrawSemiCircle)
   );
 }
 
+
+DEBUG_FILL_CIRCLE(DebugFillCircle)
+{
+  DebugFillSemicircle(X, Y, Radius, Segments, Segments, 0);
+}
+
 DEBUG_DRAW_CIRCLE(DebugDrawCircle)
 {
-  DebugDrawSemiCircle(X, Y, Radius, Segments, Segments, 0);
+  DebugDrawSemicircle(X, Y, Radius, Segments, Segments, 0);
+}
+
+DEBUG_FILL_TRIANGLE(DebugFillTriangle)
+{
+  DebugFillSemicircle(X, Y, HalfHeight, 3, 3, Angle);
 }
 
 DEBUG_DRAW_TRIANGLE(DebugDrawTriangle)
 {
-  DebugDrawSemiCircle(X, Y, HalfHeight, 3, 3, Angle);
+  DebugDrawSemicircle(X, Y, HalfHeight, 3, 3, Angle);
 }
 
 DEBUG_DRAW_BOX(DebugDrawBox)
@@ -380,8 +425,11 @@ main(int argc, char* argv[])
 
   debug_tools DebugTools;
   DebugTools.Print = DebugPrint;
-  DebugTools.DrawSemiCircle = DebugDrawSemiCircle;
+  DebugTools.FillSemicircle = DebugFillSemicircle;
+  DebugTools.DrawSemicircle = DebugDrawSemicircle;
+  DebugTools.FillCircle = DebugFillCircle;
   DebugTools.DrawCircle = DebugDrawCircle;
+  DebugTools.FillTriangle = DebugFillTriangle;
   DebugTools.DrawTriangle = DebugDrawTriangle;
   DebugTools.FillBox = DebugFillBox;
   DebugTools.DrawBox = DebugDrawBox;

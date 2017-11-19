@@ -163,13 +163,28 @@ struct memory
 )
 typedef DEBUG_PRINT(debug_print);
 
-#define DEBUG_DRAW_SEMI_CIRCLE(name) void name( \
+#define DEBUG_DRAW_SEMICIRCLE(name) void name( \
 	float X, float Y,                 \
 	float Radius,                     \
 	int Segments, int TotalSegments,  \
 	float Angle                       \
 )
-typedef DEBUG_DRAW_SEMI_CIRCLE(debug_draw_semi_circle);
+typedef DEBUG_DRAW_SEMICIRCLE(debug_draw_semi_circle);
+
+#define DEBUG_FILL_SEMICIRCLE(name) void name( \
+	float X, float Y,                 \
+	float Radius,                     \
+	int Segments, int TotalSegments,  \
+	float Angle                       \
+)
+typedef DEBUG_DRAW_SEMICIRCLE(debug_fill_semi_circle);
+
+#define DEBUG_FILL_CIRCLE(name) void name(  \
+  float X, float Y, \
+  float Radius,     \
+  int Segments      \
+)
+typedef DEBUG_FILL_CIRCLE(debug_fill_circle);
 
 #define DEBUG_DRAW_CIRCLE(name) void name(  \
   float X, float Y, \
@@ -177,6 +192,13 @@ typedef DEBUG_DRAW_SEMI_CIRCLE(debug_draw_semi_circle);
   int Segments      \
 )
 typedef DEBUG_DRAW_CIRCLE(debug_draw_circle);
+
+#define DEBUG_FILL_TRIANGLE(name) void name(  \
+  float X, float Y, \
+  float Angle,      \
+  float HalfHeight  \
+)
+typedef DEBUG_FILL_TRIANGLE(debug_fill_triangle);
 
 #define DEBUG_DRAW_TRIANGLE(name) void name(  \
   float X, float Y, \
@@ -209,8 +231,11 @@ typedef DEBUG_SET_COLOR(debug_set_color);
 struct debug_tools
 {
   debug_print *Print;
-  debug_draw_semi_circle *DrawSemiCircle;
+  debug_fill_semi_circle *FillSemicircle;
+  debug_draw_semi_circle *DrawSemicircle;
+  debug_fill_circle *FillCircle;
   debug_draw_circle *DrawCircle;
+  debug_fill_triangle *FillTriangle;
   debug_draw_triangle *DrawTriangle;
   debug_fill_box *FillBox;
   debug_draw_box *DrawBox;

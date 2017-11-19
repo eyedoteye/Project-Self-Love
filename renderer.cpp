@@ -75,24 +75,6 @@ inline void CopyVec3ToBuffer(
   Buffer[StartIndex + 2] = Vec3Z;
 }
 
-//void AddVerticesToDebugLineBuffer(
-//  line_buffer *DebugLineBuffer,
-//  float *Vertices, float *Colors,
-//  int NumberOfVertices)
-//{
-//  float *VertexBuffer = DebugLineBuffer->VertexBuffer;
-//  float *ColorBuffer = DebugLineBuffer->ColorBuffer;
-//  int *NextBufferIndex = &DebugLineBuffer->NextIndex;
-//  int NumberOfFloats = NumberOfVertices * 3;
-//
-//  for(int vertexIndex = 0; vertexIndex < NumberOfFloats; ++vertexIndex)
-//  {
-//    VertexBuffer[*NextBufferIndex] = Vertices[vertexIndex];
-//    ColorBuffer[*NextBufferIndex] = Colors[vertexIndex];
-//    ++(*NextBufferIndex);
-//  }
-//}
-
 void AddLineToDebugLineBuffer(
   line_buffer *DebugLineBuffer,
   float X1, float Y1,
@@ -149,8 +131,7 @@ void AddLineToDebugLineBuffer(
   *NextBufferIndex += 3;
 }
 
-
-void AddSemiCircleToDebugFanBuffer(
+void AddSemicircleToDebugFanBuffer(
   fan_buffer *DebugFanBuffer,
   float X, float Y,
   float Radius,
@@ -310,7 +291,7 @@ extern "C" ADD_LINE_TO_RENDERER(AddLineToRenderer)
 
 extern "C" ADD_SEMICIRCLE_TO_RENDERER(AddSemicircleToRenderer)
 {
-  AddSemiCircleToDebugFanBuffer(
+  AddSemicircleToDebugFanBuffer(
     &GlobalRendererMemory->DebugFanBuffer,
     X, Y,
     Radius,
@@ -492,7 +473,7 @@ RENDER_GAME(RenderGame)
         float *ColorBuffer = DebugFanBuffer->ColorBuffer;
         for(int BufferIndex = 1; BufferIndex < DebugFanBuffer->NextIndex; ++BufferIndex)
         {
-          ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .02f;
+          ColorBuffer[BufferIndex] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .8f;
           if(ColorBuffer[BufferIndex] > 1.f)
           {
             ColorBuffer[BufferIndex] = 1.f;
@@ -502,7 +483,7 @@ RENDER_GAME(RenderGame)
             ColorBuffer[BufferIndex] = -1.f;
           }
         }
-        ColorBuffer[0] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .01f;
+        ColorBuffer[0] += (rand() / (float)RAND_MAX * 2.f - 1.f) * .41f;
         if(ColorBuffer[0] > 1.f)
         {
           ColorBuffer[0] = 1.f;
@@ -553,7 +534,7 @@ RENDER_GAME(RenderGame)
     {
       line_buffer* DebugLineBuffer = &RendererMemory->DebugLineBuffer;
 
-      if(1) // Purpose: Shift Up The Lines Randomly
+      if(0) // Purpose: Shift Up The Lines Randomly
       {
         float *VertexBuffer = DebugLineBuffer->VertexBuffer;
         float *ColorBuffer = DebugLineBuffer->ColorBuffer;
