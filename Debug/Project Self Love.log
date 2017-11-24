@@ -1,6 +1,7 @@
 ﻿  Compiling For x86
   Compiling Game DLL
   game.cpp
+c:\users\i.i\documents\code\mywork\project self love\game.cpp(1006): warning C4189: 'Scene': local variable is initialized but not referenced
 c:\users\i.i\documents\code\mywork\project self love\game.cpp(84): warning C4505: 'IsPointLeftHandToLine': unreferenced local function has been removed
 c:\users\i.i\documents\code\mywork\project self love\game.cpp(155): warning C4505: 'GetVectorMagnitude': unreferenced local function has been removed
 c:\users\i.i\documents\code\mywork\project self love\game.cpp(210): warning C4505: 'FillCollisionVectorLineToLine': unreferenced local function has been removed

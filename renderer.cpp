@@ -461,8 +461,6 @@ RELOAD_RENDERER(ReloadRenderer)
   int GLEW_InitStatus = glewInit();
   printf("Error: %s\n", glewGetErrorString(GLEW_InitStatus));
   ASSERT(GLEW_InitStatus == GLEW_OK);
-
-  (void)0;
 }
 
 extern "C"
@@ -479,7 +477,7 @@ RENDER_GAME(RenderGame)
     {
       fan_buffer* DebugFanBuffer = &RendererMemory->DebugFanBuffer;
 
-      if(1) // Purpose: Shift Up The Colors Randomly
+      if(0) // Purpose: Shift Up The Colors Randomly
       {
         float *ColorBuffer = DebugFanBuffer->ColorBuffer;
         for(int BufferIndex = 1; BufferIndex < DebugFanBuffer->NextIndex; ++BufferIndex)

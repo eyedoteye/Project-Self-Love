@@ -977,16 +977,14 @@ LOAD_GAME(LoadGame)
   scene ClearedScene = {};
   *Scene = ClearedScene;
 
-#if 1
   baddie Baddie = {};
   Baddie.Position.X = SCREEN_WIDTH / 4;
   Baddie.Position.Y = SCREEN_HEIGHT / 2;
   Baddie.Radius = 14;
 
   AddBaddieToScene(&Baddie, Scene);
-  Baddie.Position.X += SCREEN_WIDTH / 4;
+  Baddie.Position.X += SCREEN_WIDTH / 3;
   AddBaddieToScene(&Baddie, Scene);
-#endif
 
   Scene->Hero.Dagger.State = RESTING;
   Scene->Hero.Dagger.Radius = 16;
@@ -1007,17 +1005,17 @@ RELOAD_GAME(ReloadGame)
 
   scene *Scene = GameMemory->Scene;
 
-  baddie Baddie = {};
-  Baddie.Position.X = SCREEN_WIDTH / 4;
-  Baddie.Position.Y = SCREEN_HEIGHT / 2;
-  Baddie.Radius = 14;
+  //baddie Baddie = {};
+  //Baddie.Position.X = SCREEN_WIDTH / 4;
+  //Baddie.Position.Y = SCREEN_HEIGHT / 2;
+  //Baddie.Radius = 14;
 
-  Scene->BaddieCount = 0;
+  //Scene->BaddieCount = 0;
 
-  AddBaddieToScene(&Baddie, Scene);
-  Baddie.Position.X += SCREEN_WIDTH / 4;
-  AddBaddieToScene(&Baddie, Scene);
+  //AddBaddieToScene(&Baddie, Scene);
+  //Baddie.Position.X += SCREEN_WIDTH / 4;
+  //AddBaddieToScene(&Baddie, Scene);
 
-  Scene->Hero.Dagger.Radius = 16;
+  //Scene->Hero.Dagger.Radius = 16;
 #endif
 }
