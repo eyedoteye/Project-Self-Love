@@ -1,61 +1,5 @@
-#include <assert.h>
-#define ASSERT(...) assert(__VA_ARGS__)
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include "common.h"
-
-#define internal static
-#define global_variable static
-#define local_persist static
-
-#include <SDL2/SDL_video.h>
-#define GLEW_STATIC
-#include <GL/glew.h>
-
 #include "renderer.h"
-#include "shader_object.cpp"
-
-struct line_buffer
-{
-  GLfloat *VertexBuffer;
-  GLfloat *ColorBuffer;
-  int NextIndex;
-};
-
-struct fan_buffer
-{
-  GLfloat *VertexBuffer;
-  GLfloat *ColorBuffer;
-  int *Strides;
-  int Count;
-  int NextIndex;
-};
-
-struct renderer_memory
-{
-  size_t NextMemoryPosition;
-
-
-  SDL_Window *Window;
-  SDL_GLContext GLContext;
-
-  shader DebugShader;
-
-  line_buffer DebugLineBuffer;
-  GLuint DebugLineVAO;
-  GLuint DebugLineVertexVBO;
-  GLuint DebugLineColorVBO;
-
-  fan_buffer DebugFanBuffer;
-  GLuint DebugFanVAO;
-  GLuint DebugFanVertexVBO;
-  GLuint DebugFanColorVBO;
-};
-global_variable renderer_memory *GlobalRendererMemory;
-
-
+#include "renderer_api.h"
 // Note: Pixels are ints between 0 to ScreenDimension.
 // Vertices are floats between -1 to 1.
 inline void NormalizePixelsToVertex(
@@ -282,6 +226,7 @@ void AddRectToDebugFanBuffer(
   *Count += 1;
 }
 
+
 extern "C" ADD_LINE_TO_RENDERER(AddLineToRenderer)
 {
   AddLineToDebugLineBuffer(
@@ -315,155 +260,8 @@ extern "C" ADD_RECT_TO_RENDERER(AddRectToRenderer)
   );
 }
 
-#define DEBUG_LINE_BUFFER_ARRAY_SIZE 3000
-#define DEBUG_FAN_BUFFER_ARRAY_SIZE 3000
-#define DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE 1000
-
-extern "C"
-LOAD_RENDERER(LoadRenderer)
+void DrawDebugBuffers(renderer_memory * RendererMemory)
 {
-  srand(0); // Purpose: Seeding rand for testing
-
-  renderer_memory *RendererMemory = (renderer_memory *)AllocatedMemory;
-  GlobalRendererMemory = RendererMemory;
-
-  RendererMemory->Window = Window;
-
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-
-  RendererMemory->GLContext = SDL_GL_CreateContext(RendererMemory->Window);
-
-  // Fun: Why is GLEW so weird?
-  //glewExperimental = GL_TRUE;
-  int GLEW_InitStatus = glewInit();
-  printf("Error: %s\n", glewGetErrorString(GLEW_InitStatus));
-  ASSERT(GLEW_InitStatus == GLEW_OK);
-
-
-  size_t *NextMemoryPosition = &RendererMemory->NextMemoryPosition;
-  *NextMemoryPosition = (size_t)RendererMemory + sizeof(renderer_memory);
-
-
-  if(1) // Purpose: Setup DebugLine related things.
-  {
-    line_buffer *DebugLineBuffer = &RendererMemory->DebugLineBuffer;
-
-    DebugLineBuffer->VertexBuffer = (float*)(*NextMemoryPosition);
-    *NextMemoryPosition += DEBUG_LINE_BUFFER_ARRAY_SIZE * sizeof(float);
-
-    DebugLineBuffer->ColorBuffer = (float*)(*NextMemoryPosition);
-    *NextMemoryPosition += DEBUG_LINE_BUFFER_ARRAY_SIZE * sizeof(float);
-
-    DebugLineBuffer->NextIndex = 0;
-
-    // Test: Memory Test
-    //for(int i = 0; i < DEBUG_LINE_BUFFER_ARRAY_SIZE; ++i)
-    //{
-    //  DebugLineBuffer->VertexBuffer[i] = i;
-    //  DebugLineBuffer->ColorBuffer[i] = i;
-    //}
-
-    glGenVertexArrays(1, &RendererMemory->DebugLineVAO);
-    glGenBuffers(1, &RendererMemory->DebugLineVertexVBO);
-    glGenBuffers(1, &RendererMemory->DebugLineColorVBO);
-
-    glBindVertexArray(RendererMemory->DebugLineVAO);
-    {
-      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineVertexVBO);
-      {
-        glVertexAttribPointer(
-          0,
-          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
-          (GLvoid*)0);
-        glEnableVertexAttribArray(0);
-      }
-      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugLineColorVBO);
-      {
-        glVertexAttribPointer(
-          1,
-          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
-          (GLvoid*)0);
-        glEnableVertexAttribArray(1);
-      }
-    }
-  }
-
-  if(1) // Purpose: Setup DebugFanBuffer
-  {
-    fan_buffer *DebugFanBuffer = &RendererMemory->DebugFanBuffer;
-
-    DebugFanBuffer->VertexBuffer = (float*)(*NextMemoryPosition);
-    *NextMemoryPosition += DEBUG_FAN_BUFFER_ARRAY_SIZE * sizeof(float);
-
-    DebugFanBuffer->ColorBuffer = (float*)(*NextMemoryPosition);
-    *NextMemoryPosition += DEBUG_FAN_BUFFER_ARRAY_SIZE * sizeof(float);
-
-    DebugFanBuffer->Strides = (int*)(*NextMemoryPosition);
-    *NextMemoryPosition += DEBUG_FAN_BUFFER_STRIDES_ARRAY_SIZE * sizeof(int);
-
-    DebugFanBuffer->NextIndex = 0;
-    DebugFanBuffer->Count = 0;
-
-    glGenVertexArrays(1, &RendererMemory->DebugFanVAO);
-    glGenBuffers(1, &RendererMemory->DebugFanVertexVBO);
-    glGenBuffers(1, &RendererMemory->DebugFanColorVBO);
-
-    glBindVertexArray(RendererMemory->DebugFanVAO);
-    {
-      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugFanVertexVBO);
-      {
-        glVertexAttribPointer(
-          0,
-          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
-          (GLvoid*)0);
-        glEnableVertexAttribArray(0);
-      }
-      glBindBuffer(GL_ARRAY_BUFFER, RendererMemory->DebugFanColorVBO);
-      {
-        glVertexAttribPointer(
-          1,
-          3, GL_FLOAT, GL_FALSE, sizeof(float) * 3,
-          (GLvoid*)0);
-        glEnableVertexAttribArray(1);
-      }
-    }
-  }
-
-  if(1) // Purpose: Setup Debug Shader
-  {
-    shader *DebugShader = &RendererMemory->DebugShader;
-    DebugShader->Name = "DebugPrimitive";
-    {
-      DebugShader->VertexSource =
-        #include "debug_shader.vert"
-    }
-    DebugShader->GeometrySource = NULL;
-    {
-      DebugShader->FragmentSource =
-        #include "debug_shader.frag"
-    }
-    compileShader(DebugShader);
-    linkShader(DebugShader);
-  }
-}
-
-
-extern "C"
-RELOAD_RENDERER(ReloadRenderer)
-{
-  (void)0;
-}
-
-extern "C"
-RENDER_GAME(RenderGame)
-{
-  renderer_memory *RendererMemory = (renderer_memory *)AllocatedMemory;
-
-  glUseProgram(RendererMemory->DebugShader.ID);
-  glClear(GL_COLOR_BUFFER_BIT);
-
   if(1) // Purpose: Draw Debug Fan Buffer
   {
     glBindVertexArray(RendererMemory->DebugFanVAO);
@@ -585,15 +383,11 @@ RENDER_GAME(RenderGame)
     }
   }
 
-
-  
   if(1) // Purpose: Clear debug buffers
   {
     RendererMemory->DebugLineBuffer.NextIndex = 0;
-    
+
     RendererMemory->DebugFanBuffer.Count = 0;
     RendererMemory->DebugFanBuffer.NextIndex = 0;
   }
-
-  SDL_GL_SwapWindow(RendererMemory->Window);
 }
