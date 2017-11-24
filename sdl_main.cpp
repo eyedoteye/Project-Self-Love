@@ -465,12 +465,19 @@ main(int argc, char* argv[])
   char *BasePath = SDL_GetBasePath();
   int BasePathLength = GetTerminatedStringLength(BasePath);
 
-  char FilePath[200];
+  char GameFilePath[200];
   strncpy(
-    FilePath,
+    GameFilePath,
     BasePath, BasePathLength);
-  strncpy(FilePath + BasePathLength,
+  strncpy(GameFilePath + BasePathLength,
           "game.dll", sizeof("game.dll"));
+
+  char RendererFilePath[200];
+  strncpy(
+    RendererFilePath,
+    BasePath, BasePathLength);
+  strncpy(RendererFilePath + BasePathLength,
+          "renderer.dll", sizeof("renderer.dll"));
 
   while(GlobalRunning)
   {
@@ -479,12 +486,20 @@ main(int argc, char* argv[])
 
     struct stat DLLInfo;
 
-    stat(FilePath, &DLLInfo);
+    stat(GameFilePath, &DLLInfo);
     if(DLLInfo.st_mtime != GameFunctions.Timestamp)
     {
       UnloadGameFunctions(&GameFunctions);
       LoadGameFunctions(&GameFunctions);
       GameFunctions.ReloadGame(&Memory, &DebugTools);
+    } 
+
+    stat(RendererFilePath, &DLLInfo);
+    if(DLLInfo.st_mtime != RendererFunctions.Timestamp)
+    {
+      UnloadRendererFunctions(&RendererFunctions);
+      LoadRendererFunctions(&RendererFunctions);
+      RendererFunctions.ReloadRenderer(MemoryAllocatedForRenderer, Window);
     }
 
     {
